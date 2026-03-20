@@ -1,0 +1,31 @@
+{
+  "version": "1.0",
+  "appId": null,
+  "appDisplayName": "SourceDestinationApp",
+  "region": "prod",
+  "environmentId": "Default-a4b78e50-fa8c-4655-a7cf-56447e32cd33",
+  "description": "",
+  "buildPath": "./dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:3000",
+  "logoPath": "Default",
+  "connectionReferences": {
+    "a44986bd-ab26-469c-826b-dc503819fd25": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+      "displayName": "SharePoint",
+      "dataSources": [
+        "gsdc_accounts"
+      ],
+      "dataSets": {
+        "https://gsdcph.sharepoint.com": {
+          "dataSources": {
+            "gsdc_accounts": {
+              "tableName": "GSDC_Accounts"
+            }
+          }
+        }
+      }
+    }
+  },
+  "databaseReferences": {}
+}
