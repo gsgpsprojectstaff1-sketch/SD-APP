@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "appId": null,
+  "appId": "d510380b-c1ae-47e0-9435-97533cf22e86",
   "appDisplayName": "SourceDestinationApp",
   "region": "prod",
   "environmentId": "Default-a4b78e50-fa8c-4655-a7cf-56447e32cd33",
@@ -21,6 +21,28 @@
           "dataSources": {
             "gsdc_accounts": {
               "tableName": "GSDC_Accounts"
+            }
+          }
+        }
+      }
+    },
+    "d6805e4d-65e6-4cf4-a8fb-551830964a69": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_sql",
+      "displayName": "SQL Server",
+      "dataSources": [
+        "sddestination",
+        "sdsource"
+      ],
+      "authenticationType": "sqlAuthentication",
+      "sharedConnectionId": "/providers/Microsoft.PowerApps/apis/shared_sql/connections/shared-sql-b7511346-058d-4ccf-aac8-4ea6e7fd6ed1",
+      "dataSets": {
+        "localhost,GSDC_PROD": {
+          "dataSources": {
+            "sddestination": {
+              "tableName": "[dbo].[SDDestination]"
+            },
+            "sdsource": {
+              "tableName": "[dbo].[SDSource]"
             }
           }
         }

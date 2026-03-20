@@ -6,6 +6,10 @@
 // Models
 export * as CommonModels from './models/CommonModels';
 export * as GSDC_AccountsModel from './models/GSDC_AccountsModel';
+export * as SDDestinationModel from './models/SDDestinationModel';
+export * as SDSourceModel from './models/SDSourceModel';
 
 // Services
 export * from './services/GSDC_AccountsService';
+export * from './services/SDDestinationService';
+export * from './services/SDSourceService';

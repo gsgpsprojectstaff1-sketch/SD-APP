@@ -98,7 +98,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
-import logo from "../assets/GSDC.png";
 import "./Login.css";
 import { GSDC_AccountsService } from "../generated/services/GSDC_AccountsService";
 import type { GSDC_AccountsRead } from "../generated/models/GSDC_AccountsModel";
@@ -156,7 +155,7 @@ function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <img src={logo} alt="Logo" className="logo-icon" />
+           <img src="/assets/GSDC1.png" alt="logo" />
           <h2>Welcome</h2>
           <p>Source & Destination App</p>
         </div>

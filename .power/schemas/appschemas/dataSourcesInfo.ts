@@ -117,5 +117,19 @@ export const dataSourcesInfo = {
         }
       }
     }
+  },
+  "sddestination": {
+    "tableId": "SDDestination",
+    "version": "v2",
+    "primaryKey": "",
+    "dataSourceType": "Connector",
+    "apis": {}
+  },
+  "sdsource": {
+    "tableId": "SDSource",
+    "version": "v2",
+    "primaryKey": "",
+    "dataSourceType": "Connector",
+    "apis": {}
   }
 };
