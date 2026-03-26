@@ -47,6 +47,24 @@
           }
         }
       }
+    },
+    "dd6ff7aa-3448-409a-9ce7-70c0e7e4854e": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_sql",
+      "displayName": "SQL Server",
+      "dataSources": [
+        "source_desti_matrix"
+      ],
+      "authenticationType": "sqlAuthentication",
+      "sharedConnectionId": "/providers/Microsoft.PowerApps/apis/shared_sql/connections/0fc283b836cd401f95f54f319fec395b",
+      "dataSets": {
+        "localhost,POWERAPPS_MASTERDATA": {
+          "dataSources": {
+            "source_desti_matrix": {
+              "tableName": "[dbo].[Source_Desti_Matrix]"
+            }
+          }
+        }
+      }
     }
   },
   "databaseReferences": {}

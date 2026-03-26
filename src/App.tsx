@@ -1,7 +1,7 @@
 //run 3
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+import Dashboard1 from "./pages/Dashboard1";
 
 function App() {
   return (
@@ -15,9 +15,9 @@ function App() {
 
         {/* Dashboard route: kung may user sa localStorage, ipakita dashboard, kung wala redirect sa login */}
         <Route
-          path="/dashboard"
+          path="/dashboard1"
           element={
-            localStorage.getItem("user") ? <Dashboard /> : <Navigate to="/login" />
+            localStorage.getItem("user") ? <Dashboard1   /> : <Navigate to="/login" />
           }
         />
 

@@ -46,7 +46,7 @@ function Login() {
       localStorage.setItem("user", JSON.stringify(user));
 
       // Redirect to dashboard
-      navigate("/dashboard");
+      navigate("/dashboard1");
     } catch (err) {
       console.error(err);
       setError("An error occurred while logging in. Please try again.");

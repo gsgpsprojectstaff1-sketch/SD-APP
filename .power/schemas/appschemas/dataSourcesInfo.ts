@@ -131,5 +131,12 @@ export const dataSourcesInfo = {
     "primaryKey": "",
     "dataSourceType": "Connector",
     "apis": {}
+  },
+  "source_desti_matrix": {
+    "tableId": "Source_Desti_Matrix",
+    "version": "v2",
+    "primaryKey": "",
+    "dataSourceType": "Connector",
+    "apis": {}
   }
 };
