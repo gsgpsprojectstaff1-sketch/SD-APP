@@ -1,8 +1,10 @@
+  
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../src/components/Sidebar";
 import DashboardHeader from "../../src/components/DashboardHeader.tsx";
 import TripForm, { type Entry } from "../../src/components/TripForm.tsx";
+
 import TripTable from "../../src/components/TripTable.tsx";
 import { Truck, MapPin, Route, TrendingUp } from "lucide-react";
 import { SDSourceService } from "../generated/services/SDSourceService";
@@ -21,16 +23,35 @@ const Dashboard1 = () => {
   const [activeItem, setActiveItem] = useState("trips");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [form, setForm] = useState<Entry>(emptyForm);
+  const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState("");
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+
   const [username, setUsername] = useState<string>("Admin");
   const [sourceOptions, setSourceOptions] = useState<{ value: string; label: string }[]>([]);
   const [destinationOptions, setDestinationOptions] = useState<{ value: string; label: string }[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+
+  const toggleSidebar = () => {
+    if (window.innerWidth < 768) {
+      setSidebarOpen((prev) => !prev);
+    }
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        if (parsedUser?.UserName) {
+        const fullName = [parsedUser?.FirstName, parsedUser?.LastName]
+          .filter((part: string | undefined) => !!part)
+          .join(" ");
+
+        if (fullName) {
+          setUsername(fullName);
+        } else if (parsedUser?.UserName) {
           setUsername(parsedUser.UserName);
         }
       } catch (err) {
@@ -69,6 +90,25 @@ const Dashboard1 = () => {
     };
 
     fetchDropdowns();
+
+    // Auto-show sidebar on desktop/fullscreen
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    // Set initial sidebar state based on screen size
+    if (window.innerWidth >= 768) {
+      setSidebarOpen(true);
+    } else {
+      setSidebarOpen(false);
+    }
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   const handleChange = (field: keyof Entry, value: string) => {
@@ -79,6 +119,7 @@ const Dashboard1 = () => {
     if (!form.source || !form.destination) return;
     setEntries((prev) => [...prev, form]);
     setForm(emptyForm);
+    setShowForm(false);
   };
 
   const stats = [
@@ -95,9 +136,19 @@ const Dashboard1 = () => {
 
   return (
     <div className="dashboard-container">
-      <Sidebar activeItem={activeItem} onItemClick={setActiveItem} onLogout={handleLogout} />
-      <div className="dashboard-main">
-        <DashboardHeader title="Trips Routes & Cost" username={username} />
+      <Sidebar activeItem={activeItem} onItemClick={setActiveItem} onLogout={handleLogout} isOpen={sidebarOpen} />
+      <div className={`dashboard-main ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
+        <div className="mobile-menu-bar">
+          <button className="mobile-menu-btn" onClick={toggleSidebar}>
+            ☰
+          </button>
+        </div>
+        <DashboardHeader
+          title="Trips Routes & Cost"
+          username={username}
+          search={search}
+          onSearchChange={handleSearchChange}
+        />
         <main className="dashboard-content">
           <div className="stats-grid">
             {stats.map((stat) => {
@@ -116,8 +167,36 @@ const Dashboard1 = () => {
             })}
           </div>
 
-          <TripForm form={form} onChange={handleChange} onCommit={handleCommit} sourceOptions={sourceOptions} destinationOptions={destinationOptions} />
-          <TripTable entries={entries} />
+          {/* Add Trip Button */}
+          {!showForm && (
+            <div style={{ margin: '0.5rem 0 1rem 0', textAlign: 'left' }}>
+              <button className="quick-add-btn" onClick={() => setShowForm(true)}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus-circle"><circle cx="9" cy="9" r="8"/><line x1="9" x2="9" y1="6" y2="12"/><line x1="6" x2="12" y1="9" y2="9"/></svg>
+                  Add Trip
+                </span>
+              </button>
+            </div>
+          )}
+          {/* Quick Add Trip Form */}
+          {showForm && (
+            <TripForm
+              form={form}
+              onChange={handleChange}
+              onCommit={handleCommit}
+              sourceOptions={sourceOptions}
+              destinationOptions={destinationOptions}
+              onCancel={() => setShowForm(false)}
+            />
+          )}
+          {/* Filter entries by search */}
+          <TripTable
+            entries={entries.filter((entry) =>
+              Object.values(entry).some(val =>
+                val && val.toLowerCase().includes(search.toLowerCase())
+              )
+            )}
+          />
         </main>
       </div>
     </div>

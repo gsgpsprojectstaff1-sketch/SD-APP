@@ -33,11 +33,12 @@ interface TripFormProps {
   form: Entry;
   onChange: (field: keyof Entry, value: string) => void;
   onCommit: () => void;
+  onCancel?: () => void;
   sourceOptions?: { value: string; label: string }[];
   destinationOptions?: { value: string; label: string }[];
 }
 
-const TripForm = ({ form, onChange, onCommit, sourceOptions = [], destinationOptions = [] }: TripFormProps) => {
+const TripForm = ({ form, onChange, onCommit, onCancel, sourceOptions = [], destinationOptions = [] }: TripFormProps) => {
   const selectStyles = {
     control: (provided: any, state: any) => ({
       ...provided,
@@ -102,7 +103,12 @@ const TripForm = ({ form, onChange, onCommit, sourceOptions = [], destinationOpt
 
   return (
     <section className="trip-form">
-      <h3>Quick Add Trip</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3>Quick Add Trip</h3>
+        {onCancel && (
+          <button onClick={onCancel} style={{ background: 'none', border: 'none', color: '#64748b', fontWeight: 500, cursor: 'pointer', fontSize: '1rem' }}>Cancel</button>
+        )}
+      </div>
       <div className="trip-form-grid">
         {fieldOrder.map((key) => {
           if (key === "source") {

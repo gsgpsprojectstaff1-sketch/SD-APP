@@ -4,20 +4,21 @@ interface SidebarProps {
   activeItem: string;
   onItemClick: (item: string) => void;
   onLogout: () => void;
+  isOpen?: boolean;
 }
 
 const navItems = [
   { id: "trips", label: "Trips", icon: Route },
   { id: "sources", label: "Sources", icon: MapPin },
   { id: "destinations", label: "Destinations", icon: MapPin },
-  { id: "health", label: "Health", icon: Heart },
-  { id: "analytics", label: "Analytics", icon: BarChart3 },
-  { id: "settings", label: "Settings", icon: Settings },
+  //{ id: "health", label: "Health", icon: Heart },
+  //{ id: "analytics", label: "Analytics", icon: BarChart3 },
+  //{ id: "settings", label: "Settings", icon: Settings },
 ];
 
-const Sidebar = ({ activeItem, onItemClick, onLogout }: SidebarProps) => {
+const Sidebar = ({ activeItem, onItemClick, onLogout, isOpen = true }: SidebarProps) => {
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? "open" : "closed"}`}>
       <div className="sidebar-brand">
         <div className="sidebar-logo">
           <Truck size={18} />

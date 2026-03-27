@@ -44,7 +44,7 @@ const TripTable = ({ entries }: TripTableProps) => {
                 </td>
               </tr>
             ) : (
-              entries.map((entry, i) => (
+              entries.slice(0, 5).map((entry, i) => (
                 <tr key={i}>
                   {fieldOrder.map((key) => (
                     <td key={key}>{entry[key] || "—"}</td>

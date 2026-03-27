@@ -18,7 +18,11 @@ html, body, #root {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg,#1f2937,#111827,#4c1d95);
+  background:
+    radial-gradient(circle at 20% 20%, rgba(56,189,248,0.25), transparent 40%),
+    radial-gradient(circle at 80% 30%, rgba(99,102,241,0.25), transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(14,165,233,0.2), transparent 50%),
+    linear-gradient(135deg, #020617, #020617);
   font-family: "Segoe UI", sans-serif;
   overflow: hidden;
   margin: 0;               /* remove any default margin */
@@ -28,7 +32,8 @@ html, body, #root {
 
 /* Card */
 .login-card {
-  background: #1e293b;
+  /* background: #1e293b; */
+  background: linear-gradient(180deg, rgba(59,130,246,0.15), rgba(2,6,23,0.4));
   padding: 40px 35px;
   border-radius: 2rem;
   width: 90%;
