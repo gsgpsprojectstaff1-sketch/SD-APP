@@ -1,0 +1,67 @@
+/* Responsive Table Styles */
+.trip-table-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  width: 100%;
+  max-height: 400px; /* Adjust as needed */
+}
+
+.trip-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+  table-layout: auto;
+}
+
+.trip-table th, .trip-table td {
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  background: #fff;
+  min-width: 120px;
+  max-width: 400px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  resize: horizontal;
+}
+
+.trip-table th {
+  background: #fff;
+  font-weight: 600;
+  cursor: grab;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 4px -2px #0001;
+}
+
+@media (max-width: 900px) {
+  .trip-table {
+    min-width: 600px;
+  }
+  .trip-table th, .trip-table td {
+    min-width: 90px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .trip-table {
+    min-width: 400px;
+  }
+  .trip-table th, .trip-table td {
+    min-width: 70px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Filter input styles */
+.table-filter-row input {
+  width: 100%;
+  padding: 0.2rem 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  box-sizing: border-box;
+}

@@ -118,6 +118,13 @@ export const dataSourcesInfo = {
       }
     }
   },
+  "livedmsview_cem": {
+    "tableId": "LiveDMSView_CEM",
+    "version": "v2",
+    "primaryKey": "",
+    "dataSourceType": "Connector",
+    "apis": {}
+  },
   "sddestination": {
     "tableId": "SDDestination",
     "version": "v2",

@@ -65,6 +65,24 @@
           }
         }
       }
+    },
+    "9a81af4b-8a69-44a8-89ba-93d7fff1edce": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_sql",
+      "displayName": "SQL Server",
+      "dataSources": [
+        "livedmsview_cem"
+      ],
+      "authenticationType": "sqlAuthentication",
+      "sharedConnectionId": "/providers/Microsoft.PowerApps/apis/shared_sql/connections/shared-sql-0b2142c1-efb4-41bc-a352-2a714c8e3a23",
+      "dataSets": {
+        "localhost,DISPATCH_APP_DMS": {
+          "dataSources": {
+            "livedmsview_cem": {
+              "tableName": "[dbo].[LiveDMSView_CEM]"
+            }
+          }
+        }
+      }
     }
   },
   "databaseReferences": {}

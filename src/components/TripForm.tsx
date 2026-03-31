@@ -1,11 +1,12 @@
-import { PlusCircle } from "lucide-react";
-import Select from "react-select";
+import { PlusCircle, Search } from "lucide-react";
 
 export type Entry = {
+  orderEntry: string;
   source: string;
   destination: string;
   fuel: string;
-  lane: string;
+  tripLane: string;
+  fctLane: string;
   index: string;
   km: string;
   hauling: string;
@@ -13,164 +14,196 @@ export type Entry = {
   helper: string;
 };
 
-const fieldOrder: (keyof Entry)[] = [
-  "source", "destination", "fuel", "lane", "index", "km", "hauling", "driver", "helper",
-];
-
-const fieldLabels: Record<keyof Entry, string> = {
-  source: "Source",
-  destination: "Destination",
-  fuel: "Approved Fuel Budget",
-  lane: "Lane Code",
-  index: "Trip Index",
-  km: "Trip KM",
-  hauling: "Hauling Rate",
-  driver: "Driver Rate",
-  helper: "Helper Rate",
-};
 
 interface TripFormProps {
   form: Entry;
   onChange: (field: keyof Entry, value: string) => void;
   onCommit: () => void;
   onCancel?: () => void;
-  sourceOptions?: { value: string; label: string }[];
-  destinationOptions?: { value: string; label: string }[];
+  onLookup?: () => void;
 }
 
-const TripForm = ({ form, onChange, onCommit, onCancel, sourceOptions = [], destinationOptions = [] }: TripFormProps) => {
-  const selectStyles = {
-    control: (provided: any, state: any) => ({
-      ...provided,
-      width: "100%",
-      padding: 0,
-      backgroundColor: "#f5f5f5",
-      borderColor: state.isFocused ? "#2563eb" : "#cbd5e1",
-      borderRadius: "0.55rem",
-      border: `1px solid ${state.isFocused ? "#2563eb" : "#cbd5e1"}`,
-      minHeight: "auto",
-      boxShadow: state.isFocused ? "0 0 0 2px rgba(37, 99, 235, 0.18)" : "none",
-      cursor: "pointer",
-      transition: "all 0.2s ease",
-    }),
-    valueContainer: (provided: any) => ({
-      ...provided,
-      padding: "0.58rem 0.65rem",
-    }),
-    input: (provided: any) => ({
-      ...provided,
-      padding: 0,
-      margin: 0,
-      color: "#0f172a",
-    }),
-    placeholder: (provided: any) => ({
-      ...provided,
-      color: "#94a3b8",
-      fontWeight: 500,
-    }),
-    singleValue: (provided: any) => ({
-      ...provided,
-      color: "#0f172a",
-    }),
-    indicatorSeparator: () => ({
-      display: "none",
-    }),
-    dropdownIndicator: (provided: any) => ({
-      ...provided,
-      color: "#cbd5e1",
-      padding: "0.4rem 0.65rem",
-      "&:hover": {
-        color: "#64748b",
-      },
-    }),
-    clearIndicator: (provided: any) => ({
-      ...provided,
-      color: "#cbd5e1",
-      padding: "0.4rem 0.4rem",
-    }),
-    menuList: (provided: any) => ({
-      ...provided,
-      maxHeight: "200px",
-    }),
-    option: (provided: any, state: any) => ({
-      ...provided,
-      backgroundColor: state.isSelected ? "#2563eb" : state.isFocused ? "#e0e7ff" : "white",
-      color: state.isSelected ? "white" : "#334155",
-      padding: "0.58rem 0.65rem",
-      cursor: "pointer",
-    }),
-  };
+
+const TripForm = ({ form, onChange, onCommit, onCancel, onLookup }: TripFormProps) => {
 
   return (
     <section className="trip-form">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
         <h3>Quick Add Trip</h3>
-        {onCancel && (
-          <button onClick={onCancel} style={{ background: 'none', border: 'none', color: '#64748b', fontWeight: 500, cursor: 'pointer', fontSize: '1rem' }}>Cancel</button>
+      </div>
+      <div className="trip-form-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '1rem', alignItems: 'start' }}>
+        {/* First row: Order Entry (with Lookup below), Source, Destination */}
+        <div className="trip-form-field" style={{ gridRow: '1/3', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+          <label htmlFor="orderEntry" className="trip-label">Order Entry</label>
+          <input
+            id="orderEntry"
+            value={form.orderEntry}
+            onChange={e => onChange("orderEntry", e.target.value)}
+            className="trip-input"
+            placeholder="Type Order Entry"
+            style={{ marginBottom: '0.5rem', width: '100%', minHeight: '2.3rem', fontSize: '1rem' }}
+          />
+          <button
+            type="button"
+            onClick={onLookup}
+            className="commit-btn"
+            style={{ width: '60%', alignSelf: 'center', marginTop: '0.2rem' }}
+          >
+            <Search size={16} style={{ marginRight: 6, marginBottom: -2 }} />
+            Lookup
+          </button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', gridColumn: '2/4', width: '100%' }}>
+          <div style={{ flex: 1 }}>
+            <label htmlFor="source" className="trip-label">Source</label>
+            <input
+              id="source"
+              value={form.source}
+              readOnly
+              className="trip-input"
+              placeholder="Source"
+              title={form.source}
+              style={{
+                marginBottom: '0.5rem',
+                width: '100%',
+                fontSize: '0.95rem',
+                background: '#f3f4f6',
+                fontFamily: 'inherit',
+                lineHeight: '1.2',
+                padding: '0.45rem 0.75rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label htmlFor="destination" className="trip-label">Destination</label>
+            <input
+              id="destination"
+              value={form.destination}
+              readOnly
+              className="trip-input"
+              placeholder="Destination"
+              title={form.destination}
+              style={{
+                marginBottom: '0.5rem',
+                width: '100%',
+                fontSize: '0.95rem',
+                background: '#f3f4f6',
+                fontFamily: 'inherit',
+                lineHeight: '1.2',
+                padding: '0.45rem 0.75rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            />
+          </div>
+        </div>
+        {/* Next row: Approved Fuel Budget, Trip Lane Code at FCT Lane Code magkatabi */}
+        <div className="trip-form-field" style={{ gridColumn: '2/3' }}>
+          <label htmlFor="fuel" className="trip-label">Approved Fuel Budget</label>
+          <input
+            id="fuel"
+            type="text"
+            placeholder="Approved Fuel Budget"
+            value={form.fuel}
+            onChange={e => onChange("fuel", e.target.value)}
+            className="trip-input"
+          />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', gridColumn: '3/4', width: '100%' }}>
+          <div style={{ flex: 1 }}>
+            <label htmlFor="tripLane" className="trip-label">Trip Lane Code</label>
+            <input
+              id="tripLane"
+              type="text"
+              placeholder="Trip Lane Code"
+              value={form.tripLane}
+              onChange={e => onChange("tripLane", e.target.value)}
+              className="trip-input"
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label htmlFor="fctLane" className="trip-label">FCT Lane Code</label>
+            <input
+              id="fctLane"
+              type="text"
+              placeholder="FCT Lane Code"
+              value={form.fctLane}
+              onChange={e => onChange("fctLane", e.target.value)}
+              className="trip-input"
+            />
+          </div>
+        </div>
+        {/* Third row: Trip Index, Trip KM, Hauling Rate */}
+        <div className="trip-form-field" style={{ gridColumn: '1/2' }}>
+          <label htmlFor="index" className="trip-label">Trip Index</label>
+          <input
+            id="index"
+            type="text"
+            placeholder="Trip Index"
+            value={form.index}
+            onChange={e => onChange("index", e.target.value)}
+            className="trip-input"
+          />
+        </div>
+        <div className="trip-form-field" style={{ gridColumn: '2/3' }}>
+          <label htmlFor="km" className="trip-label">Trip KM</label>
+          <input
+            id="km"
+            type="text"
+            placeholder="Trip KM"
+            value={form.km}
+            onChange={e => onChange("km", e.target.value)}
+            className="trip-input"
+          />
+        </div>
+        <div className="trip-form-field" style={{ gridColumn: '3/4' }}>
+          <label htmlFor="hauling" className="trip-label">Hauling Rate</label>
+          <input
+            id="hauling"
+            type="text"
+            placeholder="Hauling Rate"
+            value={form.hauling}
+            onChange={e => onChange("hauling", e.target.value)}
+            className="trip-input"
+          />
+        </div>
+        {/* Fourth row: Driver Rate, Helper Rate (span 2 columns) */}
+        <div className="trip-form-field" style={{ gridColumn: '1/2' }}>
+          <label htmlFor="driver" className="trip-label">Driver Rate</label>
+          <input
+            id="driver"
+            type="text"
+            placeholder="Driver Rate"
+            value={form.driver}
+            onChange={e => onChange("driver", e.target.value)}
+            className="trip-input"
+          />
+        </div>
+        <div className="trip-form-field" style={{ gridColumn: '2/3' }}>
+          <label htmlFor="helper" className="trip-label">Helper Rate</label>
+          <input
+            id="helper"
+            type="text"
+            placeholder="Helper Rate"
+            value={form.helper}
+            onChange={e => onChange("helper", e.target.value)}
+            className="trip-input"
+          />
+        </div>
+      </div>
+      <div className="trip-form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+         {onCancel && (
+          <button onClick={onCancel} style={{ background: '#CB3D43', border: '1px solid #99002ee3',  color: '#ffffff', fontWeight: 500, cursor: 'pointer', fontSize: '1rem', borderRadius: 4, padding: '0.5rem 1.2rem' }}>Cancel</button>
         )}
-      </div>
-      <div className="trip-form-grid">
-        {fieldOrder.map((key) => {
-          if (key === "source") {
-            return (
-              <div key={key} className="trip-form-field">
-                <label htmlFor={key} className="trip-label">
-                  {fieldLabels[key]}
-                </label>
-                <Select
-                  styles={selectStyles}
-                  options={sourceOptions}
-                  value={sourceOptions.find((o) => o.value === form.source) || null}
-                  onChange={(val) => onChange("source", val?.value ?? "")}
-                  placeholder="Type or select source"
-                  isSearchable
-                  isClearable
-                />
-              </div>
-            );
-          }
-
-          if (key === "destination") {
-            return (
-              <div key={key} className="trip-form-field">
-                <label htmlFor={key} className="trip-label">
-                  {fieldLabels[key]}
-                </label>
-                <Select
-                  styles={selectStyles}
-                  options={destinationOptions}
-                  value={destinationOptions.find((o) => o.value === form.destination) || null}
-                  onChange={(val) => onChange("destination", val?.value ?? "")}
-                  placeholder="Type or select destination"
-                  isSearchable
-                  isClearable
-                />
-              </div>
-            );
-          }
-
-          return (
-            <div key={key} className="trip-form-field">
-              <label htmlFor={key} className="trip-label">
-                {fieldLabels[key]}
-              </label>
-              <input
-                id={key}
-                type="text"
-                placeholder={fieldLabels[key]}
-                value={form[key]}
-                onChange={(e) => onChange(key, e.target.value)}
-                className="trip-input"
-              />
-            </div>
-          );
-        })}
-      </div>
-      <div className="trip-form-actions">
         <button onClick={onCommit} className="commit-btn">
           <PlusCircle size={16} />
           Commit Entry
         </button>
+       
       </div>
     </section>
   );

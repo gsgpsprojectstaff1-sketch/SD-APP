@@ -1,22 +1,20 @@
-  
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../src/components/Sidebar";
 import DashboardHeader from "../../src/components/DashboardHeader.tsx";
 import TripForm, { type Entry } from "../../src/components/TripForm.tsx";
-
 import TripTable from "../../src/components/TripTable.tsx";
 import { Truck, MapPin, Route, TrendingUp } from "lucide-react";
-import { SDSourceService } from "../generated/services/SDSourceService";
-import { SDDestinationService } from "../generated/services/SDDestinationService";
-import type { SDSource } from "../generated/models/SDSourceModel";
-import type { SDDestination } from "../generated/models/SDDestinationModel";
+import { LiveDMSView_CEMService } from "../generated/services/LiveDMSView_CEMService";
+import { Source_Desti_MatrixService } from "../generated/services/Source_Desti_MatrixService";
 import "./Dashboard.css";
 
 const emptyForm: Entry = {
-  source: "", destination: "", fuel: "", lane: "",
+  orderEntry: "",
+  source: "", destination: "", fuel: "", tripLane: "", fctLane: "",
   index: "", km: "", hauling: "", driver: "", helper: "",
 };
+
 
 const Dashboard1 = () => {
   const navigate = useNavigate();
@@ -25,14 +23,15 @@ const Dashboard1 = () => {
   const [form, setForm] = useState<Entry>(emptyForm);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
+  const [popup, setPopup] = useState<string | null>(null);
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
 
   const [username, setUsername] = useState<string>("Admin");
-  const [sourceOptions, setSourceOptions] = useState<{ value: string; label: string }[]>([]);
-  const [destinationOptions, setDestinationOptions] = useState<{ value: string; label: string }[]>([]);
+  // Removed sourceOptions and destinationOptions state
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+
 
   const toggleSidebar = () => {
     if (window.innerWidth < 768) {
@@ -59,38 +58,6 @@ const Dashboard1 = () => {
       }
     }
 
-    const fetchDropdowns = async () => {
-      try {
-        const sourceResult = await SDSourceService.getAll();
-        if (sourceResult.success && sourceResult.data) {
-          const unique = [
-            ...new Set(
-              sourceResult.data
-                .filter((r: SDSource) => r.U_Active === "Y" && r.Name)
-                .map((r: SDSource) => r.Name!)
-            ),
-          ];
-          setSourceOptions(unique.map((s) => ({ value: s, label: s })));
-        }
-
-        const destResult = await SDDestinationService.getAll();
-        if (destResult.success && destResult.data) {
-          const unique = [
-            ...new Set(
-              destResult.data
-                .filter((r: SDDestination) => r.U_Active === "Y" && r.Name)
-                .map((r: SDDestination) => r.Name!)
-            ),
-          ];
-          setDestinationOptions(unique.map((d) => ({ value: d, label: d })));
-        }
-      } catch (err) {
-        console.error("Error fetching dropdowns:", err);
-      }
-    };
-
-    fetchDropdowns();
-
     // Auto-show sidebar on desktop/fullscreen
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -106,6 +73,10 @@ const Dashboard1 = () => {
     } else {
       setSidebarOpen(false);
     }
+
+    // Load SAP Trip Records table on initial page load
+    handleRefresh();
+
     return () => {
       window.removeEventListener("resize", handleResize);
     };
@@ -113,13 +84,76 @@ const Dashboard1 = () => {
 
   const handleChange = (field: keyof Entry, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  } 
 
-  const handleCommit = () => {
-    if (!form.source || !form.destination) return;
-    setEntries((prev) => [...prev, form]);
-    setForm(emptyForm);
-    setShowForm(false);
+  const handleCommit = async () => {
+    // Check all required fields
+    const requiredFields = [
+      form.source,
+      form.destination,
+      form.fuel,
+      form.tripLane,
+      form.fctLane,
+      form.index,
+      form.km,
+      form.hauling,
+      form.driver,
+      form.helper
+    ];
+    if (requiredFields.some(f => !f || f.trim() === "")) {
+      setPopup("Please fill out all fields from Source to Helper Rate before submitting.");
+      return;
+    }
+
+    // Check if source and destination already exist in SAP Trip Records
+    const duplicate = entries.some(
+      (e) =>
+        e.source.trim().toLowerCase() === form.source.trim().toLowerCase() &&
+        e.destination.trim().toLowerCase() === form.destination.trim().toLowerCase()
+    );
+    if (duplicate) {
+      setPopup("Source and destination already in the SAP TRIP RECORDS.");
+      return;
+    }
+
+    // Prepare Source_Desti_Matrix record from form
+    const newRecord = {
+      SourceName: form.source,
+      DestinationName: form.destination,
+      ApprovedFuelBudget: form.fuel ? Number(form.fuel) : undefined,
+      Trip_LaneCode: form.tripLane,
+      FCT_LaneCode: form.fctLane,
+      TripIndex: form.index ? Number(form.index) : undefined,
+      TripKM: form.km ? Number(form.km) : undefined,
+      HaulingRate: form.hauling ? Number(form.hauling) : undefined,
+      DriverRate: form.driver ? Number(form.driver) : undefined,
+      HelperRate: form.helper ? Number(form.helper) : undefined,
+    };
+    try {
+      await Source_Desti_MatrixService.create(newRecord);
+      // Refresh table after create
+      const response = await Source_Desti_MatrixService.getAll();
+      if (response.success && response.data) {
+        setEntries(response.data.map((rec: any) => ({
+          source: rec.SourceName || '',
+          destination: rec.DestinationName || '',
+          fuel: rec.ApprovedFuelBudget ? String(rec.ApprovedFuelBudget) : '',
+          tripLane: rec.Trip_LaneCode || '',
+          fctLane: rec.FCT_LaneCode || '',
+          index: rec.TripIndex ? String(rec.TripIndex) : '',
+          km: rec.TripKM ? String(rec.TripKM) : '',
+          hauling: rec.HaulingRate ? String(rec.HaulingRate) : '',
+          driver: rec.DriverRate ? String(rec.DriverRate) : '',
+          helper: rec.HelperRate ? String(rec.HelperRate) : '',
+          orderEntry: '',
+        })));
+      }
+      setForm(emptyForm);
+      setShowForm(false);
+    } catch (err) {
+      setPopup('Error saving record.');
+      console.error('Create error:', err);
+    }
   };
 
   const stats = [
@@ -134,8 +168,71 @@ const Dashboard1 = () => {
     navigate("/login");
   };
 
+  // Refresh SAP Trip Records from SQL
+  const handleRefresh = async () => {
+    const response = await Source_Desti_MatrixService.getAll();
+    if (response.success && response.data) {
+      setEntries(response.data.map((rec: any) => ({
+        source: rec.SourceName || '',
+        destination: rec.DestinationName || '',
+        fuel: rec.ApprovedFuelBudget ? String(rec.ApprovedFuelBudget) : '',
+        tripLane: rec.Trip_LaneCode || '',
+        fctLane: rec.FCT_LaneCode || '',
+        index: rec.TripIndex ? String(rec.TripIndex) : '',
+        km: rec.TripKM ? String(rec.TripKM) : '',
+        hauling: rec.HaulingRate ? String(rec.HaulingRate) : '',
+        driver: rec.DriverRate ? String(rec.DriverRate) : '',
+        helper: rec.HelperRate ? String(rec.HelperRate) : '',
+        orderEntry: '',
+      })));
+    }
+  };
+
   return (
     <div className="dashboard-container">
+      {/* Popup Modal */}
+      {popup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.25)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#fff',
+            padding: '2rem 2.5rem',
+            borderRadius: 12,
+            boxShadow: '0 2px 16px rgba(0,0,0,0.18)',
+            minWidth: 320,
+            textAlign: 'center',
+            fontSize: '1.1rem',
+            fontWeight: 500,
+          }}>
+            <div style={{ marginBottom: 18 }}>{popup}</div>
+            <button
+              style={{
+                background: '#2563eb',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                padding: '0.5rem 1.5rem',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                fontWeight: 600,
+              }}
+              onClick={() => setPopup(null)}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
       <Sidebar activeItem={activeItem} onItemClick={setActiveItem} onLogout={handleLogout} isOpen={sidebarOpen} />
       <div className={`dashboard-main ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
         <div className="mobile-menu-bar">
@@ -184,8 +281,31 @@ const Dashboard1 = () => {
               form={form}
               onChange={handleChange}
               onCommit={handleCommit}
-              sourceOptions={sourceOptions}
-              destinationOptions={destinationOptions}
+              onLookup={async () => {
+                if (!form.orderEntry) return;
+                try {
+                  // Fetch all records with matching OE
+                  const response = await LiveDMSView_CEMService.getAll({
+                    filter: `OE eq '${form.orderEntry.replace(/'/g, "''")}'`,
+                    top: 1
+                  });
+                  if (response.success && response.data && response.data.length > 0) {
+                    const record = response.data[0];
+                    setForm((prev) => ({
+                      ...prev,
+                      source: record.Source || '',
+                      destination: record.Destination || ''
+                    }));
+                  } else {
+                    setForm((prev) => ({ ...prev, source: '', destination: '' }));
+                    setPopup('No record found for this Order Entry.');
+                  }
+                } catch (err) {
+                  setForm((prev) => ({ ...prev, source: '', destination: '' }));
+                  setPopup('Error looking up Order Entry.');
+                  console.error('Lookup error:', err);
+                }
+              }}
               onCancel={() => setShowForm(false)}
             />
           )}
@@ -196,6 +316,7 @@ const Dashboard1 = () => {
                 val && val.toLowerCase().includes(search.toLowerCase())
               )
             )}
+            onRefresh={handleRefresh}
           />
         </main>
       </div>
