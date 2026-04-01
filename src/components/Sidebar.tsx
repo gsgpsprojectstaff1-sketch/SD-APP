@@ -1,15 +1,15 @@
 
 
-import { Truck, MapPin, Route, Heart, BarChart3, Settings, LogOut } from "lucide-react";
+import { Truck, LogOut, MapPin } from "lucide-react";
 
 import { useState } from "react";
-import { Users, TrendingUp } from "lucide-react";
 
 interface SidebarProps {
   activeItem: string;
   onItemClick: (item: string) => void;
   onLogout: () => void;
   isOpen?: boolean;
+  onClose?: () => void;
 }
 
 const Sidebar = ({ activeItem, onItemClick, onLogout, isOpen = true }: SidebarProps) => {
@@ -52,7 +52,7 @@ const Sidebar = ({ activeItem, onItemClick, onLogout, isOpen = true }: SidebarPr
                 closeSidebar();
               }}
             >
-              <Truck size={14} /> Source
+              <MapPin size={14} /> Source
             </button>
             <button
               className={`nav-btn submenu ${activeItem === "Trips-Source" ? "active" : ""}`}
@@ -61,7 +61,7 @@ const Sidebar = ({ activeItem, onItemClick, onLogout, isOpen = true }: SidebarPr
                 closeSidebar();
               }}
             >
-              <Users size={14} /> Destinations
+              <MapPin size={14} /> Destinations
             </button>
            
           </div>

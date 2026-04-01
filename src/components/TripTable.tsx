@@ -20,6 +20,8 @@ const fieldLabels: Record<string, string> = {
   helper: "Helper Rate",
 };
 
+const leftAlignedColumns: (keyof Entry)[] = ["source", "destination"];
+
 
 
 interface TripTableProps {
@@ -115,7 +117,7 @@ const TripTable = ({ entries, onRefresh }: TripTableProps) => {
         </button>
         <span className="trip-badge">{entries.length} Records</span>
       </div>
-      <div className="trip-table-scroll" style={{ maxHeight: 400, overflowY: 'auto', overflowX: 'auto' }}>
+      <div className="trip-table-scroll">
         <table className="trip-table">
           <thead>
             <tr>
@@ -126,6 +128,7 @@ const TripTable = ({ entries, onRefresh }: TripTableProps) => {
                   style={{
                     width: colWidths[colIdx],
                     minWidth: 50,
+                    textAlign: leftAlignedColumns.includes(fieldOrder[colIdx]) ? "left" : undefined,
                     position: 'sticky',
                     top: 0,
                     zIndex: 10,
@@ -140,7 +143,9 @@ const TripTable = ({ entries, onRefresh }: TripTableProps) => {
                   onDrop={() => handleDrop(i)}
                   onDragEnd={handleDragEnd}
                 >
-                  <span>{fieldLabels[fieldOrder[colIdx]]}</span>
+                  <span style={{ display: 'block', textAlign: leftAlignedColumns.includes(fieldOrder[colIdx]) ? 'left' : undefined }}>
+                    {fieldLabels[fieldOrder[colIdx]]}
+                  </span>
                   <div
                     style={{
                       position: 'absolute',
@@ -166,10 +171,17 @@ const TripTable = ({ entries, onRefresh }: TripTableProps) => {
                 </td>
               </tr>
             ) : (
-              entries.slice(0, 5).map((entry: Entry, i: number) => (
+              entries.map((entry: Entry, i: number) => (
                 <tr key={i}>
                   {colOrder.map((colIdx) => (
-                    <td key={fieldOrder[colIdx]} style={{ width: colWidths[colIdx], minWidth: 50 }}>
+                    <td
+                      key={fieldOrder[colIdx]}
+                      style={{
+                        width: colWidths[colIdx],
+                        minWidth: 50,
+                        textAlign: leftAlignedColumns.includes(fieldOrder[colIdx]) ? 'left' : undefined,
+                      }}
+                    >
                       {entry[fieldOrder[colIdx]] || "—"}
                     </td>
                   ))}

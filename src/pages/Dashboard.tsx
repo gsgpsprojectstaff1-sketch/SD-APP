@@ -1,11 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { PlusCircle, Truck, LogOut, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
-import { SDSourceService } from "../generated/services/SDSourceService";
-import { SDDestinationService } from "../generated/services/SDDestinationService";
-import type { SDSource } from "../generated/models/SDSourceModel";
-import type { SDDestination } from "../generated/models/SDDestinationModel";
 import Select from "react-select";
 
 type Entry = {
@@ -22,7 +18,7 @@ type Entry = {
 
 const Dashboard: React.FC = () => {
   const [entries, setEntries] = useState<Entry[]>([]);
-  const [username, setUsername] = useState<string>("");
+  const [username] = useState<string>("");
 
   const [form, setForm] = useState<Entry>({
     source: "",
@@ -36,8 +32,6 @@ const Dashboard: React.FC = () => {
     helper: "",
   });
 
-  const [sourceOptions, setSourceOptions] = useState<{ value: string; label: string }[]>([]);
-  const [destinationOptions, setDestinationOptions] = useState<{ value: string; label: string }[]>([]);
 
   const navigate = useNavigate();
 
@@ -55,47 +49,7 @@ const Dashboard: React.FC = () => {
     }),
   };
 
-  useEffect(() => {
-    const fetchDropdowns = async () => {
-      try {
-        const user = JSON.parse(localStorage.getItem("user") || "null");
-        if (!user) {
-          navigate("/login");
-          return;
-        } else {
-          setUsername(user.UserName);
-        }
-
-        const sourceResult = await SDSourceService.getAll();
-        if (sourceResult.success && sourceResult.data) {
-          const unique = [
-            ...new Set(
-              sourceResult.data
-                .filter((r: SDSource) => r.U_Active === "Y" && r.Name)
-                .map((r: SDSource) => r.Name!)
-            ),
-          ];
-          setSourceOptions(unique.map((s) => ({ value: s, label: s })));
-        }
-
-        const destResult = await SDDestinationService.getAll();
-        if (destResult.success && destResult.data) {
-          const unique = [
-            ...new Set(
-              destResult.data
-                .filter((r: SDDestination) => r.U_Active === "Y" && r.Name)
-                .map((r: SDDestination) => r.Name!)
-            ),
-          ];
-          setDestinationOptions(unique.map((d) => ({ value: d, label: d })));
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchDropdowns();
-  }, [navigate]);
+  
 
   const logout = () => {
     localStorage.removeItem("user");
@@ -190,9 +144,6 @@ const Dashboard: React.FC = () => {
                     <Select
                       key={key}
                       styles={selectStyles}
-                      options={sourceOptions}
-                      value={sourceOptions.find((o) => o.value === form.source) || null}
-                      onChange={(val) => handleChange("source", val?.value ?? "")}
                       placeholder="Source..."
                       isSearchable
                       isClearable
@@ -205,9 +156,6 @@ const Dashboard: React.FC = () => {
                     <Select
                       key={key}
                       styles={selectStyles}
-                      options={destinationOptions}
-                      value={destinationOptions.find((o) => o.value === form.destination) || null}
-                      onChange={(val) => handleChange("destination", val?.value ?? "")}
                       placeholder="Destination..."
                       isSearchable
                       isClearable

@@ -10,7 +10,7 @@ interface DashboardHeaderProps {
 const DashboardHeader = ({ title, username, search, onSearchChange }: DashboardHeaderProps) => {
   return (
     <header className="dashboard-header" >
-      <h1 style={{ color: "#0c0d0e" }}>{title}</h1>
+      <h1 className="dashboard-title">{title}</h1>
       <div className="dashboard-header-right">
         <div className="dashboard-search-wrapper">
           <Search size={16} className="dashboard-search-icon" />

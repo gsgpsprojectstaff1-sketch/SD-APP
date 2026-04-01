@@ -24,6 +24,7 @@ const Dashboard1 = () => {
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
   const [popup, setPopup] = useState<string | null>(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
@@ -233,15 +234,18 @@ const Dashboard1 = () => {
           </div>
         </div>
       )}
-      <Sidebar activeItem={activeItem} onItemClick={setActiveItem} onLogout={handleLogout} isOpen={sidebarOpen} />
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={toggleSidebar} aria-hidden="true" />
+      )}
+      <Sidebar activeItem={activeItem} onItemClick={setActiveItem} onLogout={handleLogout} isOpen={sidebarOpen} onClose={toggleSidebar} />
       <div className={`dashboard-main ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
-        <div className="mobile-menu-bar">
+        <div className={`mobile-menu-bar${sidebarOpen ? " mobile-menu-bar--hidden" : ""}`}>
           <button className="mobile-menu-btn" onClick={toggleSidebar}>
             ☰
           </button>
         </div>
         <DashboardHeader
-          title="Trips Routes & Cost"
+          title="Trips, Routes & Cost"
           username={username}
           search={search}
           onSearchChange={handleSearchChange}
@@ -281,8 +285,10 @@ const Dashboard1 = () => {
               form={form}
               onChange={handleChange}
               onCommit={handleCommit}
+              lookupLoading={lookupLoading}
               onLookup={async () => {
                 if (!form.orderEntry) return;
+                setLookupLoading(true);
                 try {
                   // Fetch all records with matching OE
                   const response = await LiveDMSView_CEMService.getAll({
@@ -304,9 +310,14 @@ const Dashboard1 = () => {
                   setForm((prev) => ({ ...prev, source: '', destination: '' }));
                   setPopup('Error looking up Order Entry.');
                   console.error('Lookup error:', err);
+                } finally {
+                  setLookupLoading(false);
                 }
               }}
-              onCancel={() => setShowForm(false)}
+              onCancel={() => {
+                setForm(emptyForm);
+                setShowForm(false);
+              }}
             />
           )}
           {/* Filter entries by search */}
