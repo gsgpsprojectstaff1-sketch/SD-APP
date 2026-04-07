@@ -142,7 +142,7 @@ export const dataSourcesInfo = {
   "source_desti_matrix": {
     "tableId": "Source_Desti_Matrix",
     "version": "v2",
-    "primaryKey": "",
+    "primaryKey": "ID",
     "dataSourceType": "Connector",
     "apis": {}
   }

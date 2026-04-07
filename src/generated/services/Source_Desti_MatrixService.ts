@@ -14,16 +14,16 @@ export class Source_Desti_MatrixService {
 
   private static readonly client = getClient(dataSourcesInfo);
 
-  public static async create(record: Source_Desti_Matrix): Promise<IOperationResult<Source_Desti_Matrix>> {
-    const result = await Source_Desti_MatrixService.client.createRecordAsync<Source_Desti_Matrix, Source_Desti_Matrix>(
+  public static async create(record: Omit<Source_Desti_Matrix, 'ID'>): Promise<IOperationResult<Source_Desti_Matrix>> {
+    const result = await Source_Desti_MatrixService.client.createRecordAsync<Omit<Source_Desti_Matrix, 'ID'>, Source_Desti_Matrix>(
       Source_Desti_MatrixService.dataSourceName,
       record
     );
     return result;
   }
 
-  public static async update(id: string, changedFields: Source_Desti_Matrix): Promise<IOperationResult<Source_Desti_Matrix>> {
-    const result = await Source_Desti_MatrixService.client.updateRecordAsync<Source_Desti_Matrix, Source_Desti_Matrix>(
+  public static async update(id: string, changedFields: Partial<Omit<Source_Desti_Matrix, 'ID'>>): Promise<IOperationResult<Source_Desti_Matrix>> {
+    const result = await Source_Desti_MatrixService.client.updateRecordAsync<Partial<Omit<Source_Desti_Matrix, 'ID'>>, Source_Desti_Matrix>(
       Source_Desti_MatrixService.dataSourceName,
       id.toString(),
       changedFields
@@ -31,7 +31,7 @@ export class Source_Desti_MatrixService {
     return result;
   }
 
-  public static async delete(id: string): Promise<void> {
+  public static async delete(id: number): Promise<void> {
     await Source_Desti_MatrixService.client.deleteRecordAsync(
       Source_Desti_MatrixService.dataSourceName,
       id.toString());

@@ -2,6 +2,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard1 from "./pages/Dashboard1";
+import UnregisterSourceDestination from "./pages/UnregisterSourceDestination";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 function App() {
   return (
@@ -13,11 +15,29 @@ function App() {
         {/* Login route */}
         <Route path="/login" element={<Login />} />
 
+
         {/* Dashboard route: kung may user sa localStorage, ipakita dashboard, kung wala redirect sa login */}
+
         <Route
           path="/dashboard1"
           element={
-            localStorage.getItem("user") ? <Dashboard1   /> : <Navigate to="/login" />
+            localStorage.getItem("user") ? (
+              <ErrorBoundary>
+                <Dashboard1 />
+              </ErrorBoundary>
+            ) : <Navigate to="/login" />
+          }
+        />
+
+        {/* Unregister Source Destination page */}
+        <Route
+          path="/unregister-source-destination"
+          element={
+            localStorage.getItem("user") ? (
+              <ErrorBoundary>
+                <UnregisterSourceDestination />
+              </ErrorBoundary>
+            ) : <Navigate to="/login" />
           }
         />
 

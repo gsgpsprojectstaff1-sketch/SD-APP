@@ -1,0 +1,283 @@
+/* Custom Scrollbar (gaya ng Dashboard1 SAP TRIP RECORDS) */
+.usd-table-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.usd-table-scroll::-webkit-scrollbar-track {
+  background: #edf2f7;
+  border-radius: 10px;
+}
+
+.usd-table-scroll::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 10px;
+  border: 2px solid #edf2f7;
+}
+
+.usd-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+/* UnregisterSourceDestination.css - Modern, clean style for Unregister Source Destination page */
+
+.usd-container {
+  display: flex;
+  min-height: 100vh;
+  background: #f6f8fa;
+}
+
+.usd-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin-left: 260px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ef 100%);
+  padding: 18px 0 0 24px;
+}
+
+.usd-header {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #1e40af;
+  margin-bottom: 1rem;
+  margin-top: 0.2rem;
+  text-align: left;
+  letter-spacing: -1px;
+  padding-left: 10px;
+}
+
+.usd-table-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px 0 rgba(30,64,175,0.06), 0 1px 3px 0 rgba(0,0,0,0.03);
+  padding: 10px 6px 0 6px;
+  margin: 0 18px 0 0;
+  position: relative;
+  height: calc(100vh - 160px); /* adjust if needed for header/footer */
+  min-height: 320px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.usd-table-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: auto;
+  width: 100%;
+  height: 100%;
+}
+.usd-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+  border-radius: 8px;
+  min-width: 400px;
+  font-size: 0.92rem;
+  table-layout: auto;
+}
+
+.usd-table th, .usd-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  max-width: 420px;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  font-size: 0.92rem;
+}
+
+.usd-table td:hover {
+  background: #f0f6ff;
+  z-index: 2;
+  position: relative;
+}
+@media (max-width: 900px) {
+  .usd-table {
+    min-width: 400px;
+    font-size: 0.95rem;
+  }
+  .usd-table th, .usd-table td {
+    max-width: 180px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .usd-table {
+    min-width: 320px;
+    font-size: 0.9rem;
+  }
+  .usd-table th, .usd-table td {
+    max-width: 120px;
+    font-size: 0.9rem;
+    padding: 8px 6px;
+  }
+}
+
+.usd-table th {
+  background: linear-gradient(90deg, #1746a2 0%, #3575ec 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: 0.5px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom: 2.5px solid #fff;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  box-shadow: 0 2px 8px 0 rgba(30,64,175,0.07);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.07);
+  padding-top: 12px;
+  padding-bottom: 12px;
+  transition: background 0.2s;
+}
+
+.usd-table th:first-child {
+  border-top-left-radius: 12px;
+}
+.usd-table th:last-child {
+  border-top-right-radius: 12px;
+}
+/* Search bar modern style */
+.usd-search-bar {
+  width: 200px;
+  max-width: 100%;
+  margin: 0 0 8px 10px;
+  display: flex;
+  align-items: center;
+  background: #f1f5f9;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px 0 rgba(30,64,175,0.03);
+  padding: 0.2rem 0.6rem;
+  border: 1px solid #e0e7ef;
+}
+.usd-search-bar input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.92rem;
+  width: 100%;
+  color: #1e293b;
+  padding: 0.1rem 0;
+}
+.usd-search-bar svg {
+  color: #64748b;
+  margin-right: 0.5rem;
+}
+
+.usd-table tr:last-child td {
+  border-bottom: none;
+}
+
+.usd-pagination {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px 8px 12px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  box-shadow: 0 -2px 8px 0 rgba(30,64,175,0.03);
+  z-index: 3;
+}
+
+.usd-pagination-btn {
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: none;
+  background: #fff;
+  color: #222;
+  font-weight: 400;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  box-shadow: none;
+}
+
+.usd-pagination-btn.active, .usd-pagination-btn:focus {
+  background: #00bcd4;
+  color: #fff;
+}
+
+.usd-pagination {
+  color: #222;
+}
+
+.usd-pagination-btn:disabled {
+  background: #eee;
+  color: #bdbdbd;
+  cursor: not-allowed;
+}
+
+.usd-per-page-select {
+  padding: 4px 16px 4px 8px;
+  border-radius: 5px;
+  border: 1px solid #00bcd4;
+  color: #222;
+  font-weight: 400;
+  font-size: 0.92rem;
+  background: #fff;
+  box-shadow: none;
+  appearance: none;
+  outline: none;
+  min-width: 48px;
+  margin-right: 4px;
+}
+.usd-per-page-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.usd-per-page-label {
+  margin-left: 2px;
+  color: #222;
+  font-size: 0.92rem;
+  font-weight: 400;
+  user-select: none;
+}
+
+@media (max-width: 900px) {
+  .usd-main {
+    margin-left: 0;
+    padding: 8px 0 0 8px;
+  }
+  .usd-header {
+    font-size: 1.3rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding-left: 10px;
+  }
+  .usd-table-card {
+    margin: 0 6px 0 0;
+    padding: 18px 6px 0 6px;
+    height: calc(100vh - 120px);
+  }
+  .usd-table-scroll {
+    height: 100%;
+  }
+  .usd-table th, .usd-table td {
+    padding: 10px 8px;
+    font-size: 0.95rem;
+  }
+  .usd-pagination {
+    flex-direction: column;
+    gap: 8px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 8px 8px 8px 8px;
+  }
+  .usd-search-bar {
+    margin: 0 0 12px 6px;
+    padding: 0.4rem 0.7rem;
+  }
+}

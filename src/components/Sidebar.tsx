@@ -4,16 +4,21 @@ import { Truck, LogOut, MapPin } from "lucide-react";
 
 import { useState } from "react";
 
+
+import { Badge } from "./ui/badge";
+
 interface SidebarProps {
   activeItem: string;
   onItemClick: (item: string) => void;
   onLogout: () => void;
   isOpen?: boolean;
   onClose?: () => void;
+  unregisterCount?: number;
 }
 
-const Sidebar = ({ activeItem, onItemClick, onLogout, isOpen = true }: SidebarProps) => {
-  const [submenuOpen, setSubmenuOpen] = useState(false);
+const Sidebar = ({ activeItem, onItemClick, onLogout, isOpen = true, unregisterCount }: SidebarProps) => {
+  // Submenu is open if Trips is the active item
+  const submenuOpen = activeItem === "Trips" || activeItem === "Unregister-Source-Destination";
 
   // Helper for closing sidebar if needed (stub, replace if you have a real closeSidebar)
   const closeSidebar = () => {};
@@ -37,33 +42,26 @@ const Sidebar = ({ activeItem, onItemClick, onLogout, isOpen = true }: SidebarPr
           className={`sidebar-nav-item ${activeItem === "Trips" || activeItem.startsWith("Trips-") ? "active" : ""}`}
           onClick={() => {
             onItemClick("Trips");
-            setSubmenuOpen((open) => !open);
             closeSidebar();
           }}
         >
-          <Truck size={16} /> Trips <span className="badge">8</span>
+          <Truck size={16} /> Trips <span className="badge"></span>
         </button>
         {submenuOpen && (
           <div style={{ marginLeft: 24, display: 'flex', flexDirection: 'column', gap: 4 }}>
             <button
-              className={`nav-btn submenu ${activeItem === "sales-client-management" ? "active" : ""}`}
+              className={`nav-btn submenu ${activeItem === "Unregister-Source-Destination" ? "active" : ""}`}
               onClick={() => {
-                onItemClick("sales-client-management");
+                onItemClick("Unregister-Source-Destination");
                 closeSidebar();
               }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
             >
-              <MapPin size={14} /> Source
+              <MapPin size={14} /> Unregister Source Destination
+              {typeof unregisterCount === 'number' && unregisterCount > 0 && (
+                <Badge variant="destructive">{unregisterCount}</Badge>
+              )}
             </button>
-            <button
-              className={`nav-btn submenu ${activeItem === "Trips-Source" ? "active" : ""}`}
-              onClick={() => {
-                onItemClick("Trips-Source");
-                closeSidebar();
-              }}
-            >
-              <MapPin size={14} /> Destinations
-            </button>
-           
           </div>
         )}
 

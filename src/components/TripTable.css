@@ -13,6 +13,7 @@
   table-layout: auto;
 }
 
+
 .trip-table th, .trip-table td {
   border: 1px solid #e5e7eb;
   padding: 0.5rem 0.75rem;
@@ -24,6 +25,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   resize: horizontal;
+  position: static !important;
+  z-index: auto !important;
+}
+
+.trip-table td input[type="checkbox"] {
+  position: relative;
+  z-index: 1001;
 }
 
 .trip-table th {
