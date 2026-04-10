@@ -3,7 +3,43 @@
   overflow-x: auto;
   overflow-y: auto;
   width: 100%;
-  max-height: 400px; /* Adjust as needed */
+  flex: 1 1 auto;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 0;
+  max-height: calc(100vh - 320px); /* Adjust 320px based on header/footer height */
+}
+
+/* Make tbody scrollable and fix thead */
+.trip-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+  table-layout: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.trip-table thead {
+  flex: 0 0 auto;
+  width: 100%;
+  display: table;;
+  table-layout: fixed;
+}
+.trip-table tbody {
+  display: block;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  width: 100%;
+  min-height: 0;
+  max-height: 100%;
+}
+.trip-table tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
 }
 
 .trip-table {
@@ -27,6 +63,7 @@
   resize: horizontal;
   position: static !important;
   z-index: auto !important;
+  height: 38px;
 }
 
 .trip-table td input[type="checkbox"] {
@@ -42,6 +79,7 @@
   top: 0;
   z-index: 10;
   box-shadow: 0 2px 4px -2px #0001;
+  height: 38px;
 }
 
 @media (max-width: 900px) {
@@ -51,6 +89,10 @@
   .trip-table th, .trip-table td {
     min-width: 90px;
     font-size: 0.95rem;
+    height: 32px;
+  }
+  .trip-table-scroll {
+    height: 370px;
   }
 }
 
@@ -61,6 +103,10 @@
   .trip-table th, .trip-table td {
     min-width: 70px;
     font-size: 0.9rem;
+    height: 28px;
+  }
+  .trip-table-scroll {
+    height: 180px;
   }
 }
 

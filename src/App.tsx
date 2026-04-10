@@ -4,47 +4,69 @@ import Login from "./pages/Login";
 import Dashboard1 from "./pages/Dashboard1";
 import UnregisterSourceDestination from "./pages/UnregisterSourceDestination";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import TripsDetails from "./pages/TripsDetails";
+import FCTDetails from "./pages/FCTDetails";
+import { BadgeProvider, useBadgeCounts } from "./AppBadgeContext";
 
-function App() {
+
+function AppWithBadges() {
+  const { unregisterCount, tripCount, fctCount } = useBadgeCounts();
   return (
     <Router>
       <Routes>
-        {/* Default route: pumunta sa login */}
         <Route path="/" element={<Login />} />
-
-        {/* Login route */}
         <Route path="/login" element={<Login />} />
-
-
-        {/* Dashboard route: kung may user sa localStorage, ipakita dashboard, kung wala redirect sa login */}
-
         <Route
           path="/dashboard1"
           element={
             localStorage.getItem("user") ? (
               <ErrorBoundary>
-                <Dashboard1 />
+                <Dashboard1 unregisterCount={unregisterCount} tripCount={tripCount} fctCount={fctCount} />
               </ErrorBoundary>
             ) : <Navigate to="/login" />
           }
         />
-
-        {/* Unregister Source Destination page */}
         <Route
           path="/unregister-source-destination"
           element={
             localStorage.getItem("user") ? (
               <ErrorBoundary>
-                <UnregisterSourceDestination />
+                <UnregisterSourceDestination unregisterCount={unregisterCount} tripCount={tripCount} fctCount={fctCount} />
               </ErrorBoundary>
             ) : <Navigate to="/login" />
           }
         />
-
-        {/* Catch-all route */}
+        <Route
+          path="/trips-details"
+          element={
+            localStorage.getItem("user") ? (
+              <ErrorBoundary>
+                <TripsDetails unregisterCount={unregisterCount} tripCount={tripCount} fctCount={fctCount} />
+              </ErrorBoundary>
+            ) : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/fct-details"
+          element={
+            localStorage.getItem("user") ? (
+              <ErrorBoundary>
+                <FCTDetails unregisterCount={unregisterCount} tripCount={tripCount} fctCount={fctCount} />
+              </ErrorBoundary>
+            ) : <Navigate to="/login" />
+          }
+        />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
+  );
+}
+
+function App() {
+  return (
+    <BadgeProvider>
+      <AppWithBadges />
+    </BadgeProvider>
   );
 }
 

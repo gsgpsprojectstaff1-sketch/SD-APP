@@ -1,19 +1,20 @@
-
-import { useState, useEffect } from "react";
-import { Search, Bell } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useBadgeCounts } from "../AppBadgeContext";
+import type { Entry } from "../components/TripForm";
 import "./UnregisterSourceDestination.css";
 import Sidebar from "../components/Sidebar";
 import { LiveDMSView_CEMService } from "../generated/services/LiveDMSView_CEMService";
 import { Source_Desti_MatrixService } from "../generated/services/Source_Desti_MatrixService";
 import { useNavigate } from "react-router-dom";
+import DashboardHeader from "../components/DashboardHeader";
 
 interface SourceDestPair {
   source: string;
   destination: string;
-  OE?: string;
 }
 
-const UnregisterSourceDestination = () => {
+const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: { unregisterCount: number, tripCount: number, fctCount: number }) => {
+  const { refreshCounts } = useBadgeCounts();
   const [unregistered, setUnregistered] = useState<SourceDestPair[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -25,62 +26,178 @@ const UnregisterSourceDestination = () => {
   const username = "Bongolo";
   const navigate = useNavigate();
 
+  // Modal state
+  const [showModal, setShowModal] = useState(false);
+  // Removed: selectedPair, not used
+  // TripForm state
+  // Remove orderEntry for this modal
+  const emptyForm: Entry = {
+    orderEntry: "", // not used
+    source: "",
+    destination: "",
+    fuel: "",
+    tripLane: "",
+    fctLane: "",
+    index: "",
+    km: "",
+    hauling: "",
+    driver: "",
+    helper: "",
+  };
+  const [form, setForm] = useState<Entry>(emptyForm);
+  const [popup, setPopup] = useState<string>("");
+  const [haulingError, setHaulingError] = useState<string>("");
+  // Notification state
+  const [notification, setNotification] = useState<string>("");
+  const [showNotification, setShowNotification] = useState(false);
+  const [progress, setProgress] = useState(100);
+  // Use number for timerRef to avoid NodeJS type error in React
+  const timerRef = useRef<number | null>(null);
+  // Removed: lookupLoading, not used
+  // When opening modal, prefill form
+  const handleOpenModal = (pair: SourceDestPair) => {
+    setForm({
+      ...emptyForm,
+      source: pair.source,
+      destination: pair.destination,
+    });
+    setShowModal(true);
+  };
+
+  const handleChange = (field: keyof Entry, value: string) => {
+    if (field === "hauling") {
+      // Only allow numbers
+      if (/^\d*$/.test(value)) {
+        setForm((prev) => ({ ...prev, [field]: value }));
+        setHaulingError("");
+      } else {
+        setHaulingError("Numbers only are allowed for Hauling Rate.");
+      }
+    } else {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    }
+  };
+
+  // Refetch logic extracted for reuse
+  const fetchUnregistered = async () => {
+    setLoading(true);
+    try {
+      const [tripRes, matrixRes] = await Promise.all([
+        LiveDMSView_CEMService.getAll(),
+        Source_Desti_MatrixService.getAll()
+      ]);
+      if (
+        tripRes.success && tripRes.data &&
+        matrixRes.success && matrixRes.data
+      ) {
+        const registeredSet = new Set(
+          matrixRes.data.map((rec: any) => `${rec.SourceName?.toLowerCase()}|${rec.DestinationName?.toLowerCase()}`)
+        );
+        const uniquePairs = new Set<string>();
+        const unregisteredPairs: SourceDestPair[] = [];
+        for (const trip of tripRes.data) {
+          const src = trip.Source?.trim() || "";
+          const dst = trip.Destination?.trim() || "";
+          if (!src || !dst) continue;
+          const key = `${src.toLowerCase()}|${dst.toLowerCase()}`;
+          if (!uniquePairs.has(key)) {
+            uniquePairs.add(key);
+            if (!registeredSet.has(key)) {
+              unregisteredPairs.push({ source: src, destination: dst });
+            }
+          }
+        }
+        setUnregistered(unregisteredPairs);
+      } else {
+        setUnregistered([]);
+      }
+    } catch (err) {
+      setUnregistered([]);
+      console.error("Failed to fetch data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Modern Toast Notification logic
+  const showToast = (msg: string) => {
+    setNotification(msg);
+    setShowNotification(true);
+    setProgress(100);
+    // Animate progress bar
+    let start = Date.now();
+    let duration = 3000;
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = window.setInterval(() => {
+      let elapsed = Date.now() - start;
+      let percent = Math.max(0, 100 - (elapsed / duration) * 100);
+      setProgress(percent);
+      if (percent <= 0) {
+        setShowNotification(false);
+        setNotification("");
+        if (timerRef.current) clearInterval(timerRef.current);
+      }
+    }, 30);
+  };
+
+  const closeToast = () => {
+    setShowNotification(false);
+    setNotification("");
+    setProgress(0);
+    if (timerRef.current) clearInterval(timerRef.current);
+  };
+
+  const handleCommit = async () => {
+    // Only Hauling Rate is required
+    if (!form.hauling || form.hauling.trim() === "") {
+      setPopup("Please fill out the Hauling Rate before submitting.");
+      return;
+    }
+    // Prepare Source_Desti_Matrix record from form
+    const newRecord = {
+      SourceName: form.source,
+      DestinationName: form.destination,
+      ApprovedFuelBudget: form.fuel ? Number(form.fuel) : undefined,
+      Trip_LaneCode: form.tripLane,
+      FCT_LaneCode: form.fctLane,
+      TripIndex: form.index ? Number(form.index) : undefined,
+      TripKM: form.km ? Number(form.km) : undefined,
+      HaulingRate: form.hauling ? Number(form.hauling) : undefined,
+      DriverRate: form.driver ? Number(form.driver) : undefined,
+      HelperRate: form.helper ? Number(form.helper) : undefined,
+    };
+    try {
+      await Source_Desti_MatrixService.create(newRecord);
+      setPopup("");
+      setShowModal(false);
+      setForm(emptyForm);
+      // Auto-refresh unregistered list
+      fetchUnregistered();
+      // Refresh badge counts
+      refreshCounts();
+      // Show modern toast notification
+      showToast("Trip entry committed successfully!");
+    } catch (err) {
+      setPopup('Error saving record.');
+      console.error('Create error:', err);
+    }
+  };
+
   const handleSidebarItemClick = (item: string) => {
     setActiveItem(item);
     if (item === "Trips") {
       navigate("/dashboard1");
     } else if (item === "Unregister-Source-Destination") {
       navigate("/unregister-source-destination");
+    } else if (item === "Trip") {
+      navigate("/trips-details");
+    } else if (item === "FCT") {
+      navigate("/fct-details");
     }
   };
 
   useEffect(() => {
-    let isMounted = true;
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Parallel fetching
-        const [tripRes, matrixRes] = await Promise.all([
-          LiveDMSView_CEMService.getAll(),
-          Source_Desti_MatrixService.getAll()
-        ]);
-        if (
-          tripRes.success && tripRes.data &&
-          matrixRes.success && matrixRes.data
-        ) {
-          const registeredSet = new Set(
-            matrixRes.data.map((rec: any) => `${rec.SourceName?.toLowerCase()}|${rec.DestinationName?.toLowerCase()}`)
-          );
-          const uniquePairs = new Set<string>();
-          const unregisteredPairs: SourceDestPair[] = [];
-          for (const trip of tripRes.data) {
-            const src = trip.Source?.trim() || "";
-            const dst = trip.Destination?.trim() || "";
-            const oe = trip.OE || "";
-            if (!src || !dst) continue;
-            const key = `${src.toLowerCase()}|${dst.toLowerCase()}`;
-            if (!uniquePairs.has(key)) {
-              uniquePairs.add(key);
-              if (!registeredSet.has(key)) {
-                unregisteredPairs.push({ source: src, destination: dst, OE: oe });
-              }
-            }
-          }
-          if (isMounted) setUnregistered(unregisteredPairs);
-        } else {
-          // API error
-          if (isMounted) setUnregistered([]);
-        }
-      } catch (err) {
-        // Network or unexpected error
-        if (isMounted) setUnregistered([]);
-        console.error("Failed to fetch data:", err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    fetchData();
-    return () => { isMounted = false; };
+    fetchUnregistered();
   }, []);
 
   const handleLogout = () => {
@@ -148,40 +265,66 @@ const UnregisterSourceDestination = () => {
     return pageNumbers;
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
+
   return (
-    <div className="usd-container">
+    <div style={{ display: "flex" }}>
+      {/* Modern Toast Notification */}
+      {showNotification && (
+        <div style={{
+          position: 'fixed',
+          top: 24,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#fff',
+          color: '#222',
+          padding: 0,
+          borderRadius: 10,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
+          zIndex: 3000,
+          minWidth: 340,
+          maxWidth: 400,
+          fontWeight: 500,
+          fontSize: 17,
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '18px 22px 14px 18px', gap: 12 }}>
+            {/* Green check icon */}
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#22c55e', borderRadius: '50%', width: 28, height: 28 }}>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="#22c55e"/><path d="M6.5 10.5L9 13L14 8" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </span>
+            <span style={{ flex: 1, color: '#222', fontWeight: 500 }}>{notification}</span>
+            {/* Close button */}
+            <button onClick={closeToast} style={{ background: 'none', border: 'none', color: '#888', fontSize: 22, cursor: 'pointer', marginLeft: 8, lineHeight: 1 }} aria-label="Close notification">&times;</button>
+          </div>
+          {/* Progress bar */}
+          <div style={{ height: 4, width: '100%', background: '#e5e7eb', borderRadius: '0 0 10px 10px', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${progress}%`, background: '#22c55e', transition: 'width 0.1s linear' }} />
+          </div>
+        </div>
+      )}
       <Sidebar
         activeItem={activeItem}
         onItemClick={handleSidebarItemClick}
         onLogout={handleLogout}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        unregisterCount={unregistered.length}
+        unregisterCount={unregisterCount}
+        tripCount={tripCount}
+        fctCount={fctCount}
       />
-      <div className={`usd-main ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
+      <div className={`dashboard-main ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
+        <DashboardHeader
+          title="UNREGISTER SD"
+          username={username}
+          search={search}
+          onSearchChange={handleSearchChange}
+        />
         <main className="dashboard-content">
-          <header className="dashboard-header" style={{marginBottom: 12}}>
-            <h1 className="dashboard-title" style={{fontSize: '1.15rem', fontWeight: 600, color: '#22314a', letterSpacing: 0.5, margin: 0}}>Unregister SD</h1>
-            <div className="dashboard-header-right">
-              <div className="dashboard-search-wrapper">
-                <Search size={16} className="dashboard-search-icon" />
-                <input
-                  type="text"
-                  placeholder="Search source or destination..."
-                  className="dashboard-search"
-                  value={search}
-                  onChange={e => { setSearch(e.target.value); setPage(1); }}
-                />
-              </div>
-              <button className="icon-button" title="Notifications">
-                <Bell size={18} />
-              </button>
-              <div className="user-chip">
-                <div className="user-avatar">{username[0].toUpperCase()}</div>
-                <span>{username}</span>
-              </div>
-            </div>
-          </header>
           {loading ? (
             <p style={{ marginLeft: 24 }}>Loading...</p>
           ) : unregistered.length === 0 ? (
@@ -193,22 +336,32 @@ const UnregisterSourceDestination = () => {
                   <thead>
                     <tr>
                       <th style={{ width: 48, textAlign: 'center', border: 'none' }}>#</th>
-                      <th>OE</th>
+                      {/* <th>OE</th> */}
                       <th>Source</th>
                       <th>Destination</th>
+                      <th style={{ width: 80 }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pagedData.map((pair, idx) => {
-                      const uniqueKey = `${pair.source}|${pair.destination}|${pair.OE ?? ''}`;
+                      const uniqueKey = `${pair.source}|${pair.destination} ?? ''}`;
                       return (
                         <tr key={uniqueKey}>
                           <td style={{ textAlign: 'center', fontWeight: 500, border: 'none' }}>
                             {((page - 1) * pageSize) + idx + 1}
                           </td>
-                          <td title={pair.OE}>{pair.OE || ''}</td>
+                          {/* <td title={pair.OE}>{pair.OE || ''}</td> */}
                           <td title={pair.source}>{pair.source}</td>
                           <td title={pair.destination}>{pair.destination}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button
+                              className="usd-add-btn"
+                              style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', cursor: 'pointer', fontWeight: 500 }}
+                              onClick={() => handleOpenModal(pair)}
+                            >
+                              Add
+                            </button>
+                          </td>
                         </tr>
                       );
                     })}
@@ -247,6 +400,82 @@ const UnregisterSourceDestination = () => {
                   </select>
                   <span className="usd-per-page-label">per page</span>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal for Quick Add Trip */}
+          {showModal && (
+            <div className="usd-modal-overlay" style={{
+              position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+              background: 'rgba(0,0,0,0.25)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <div className="usd-modal-content" style={{
+                background: '#fff', borderRadius: 12, padding: 0, minWidth: 600, maxWidth: '95vw', boxShadow: '0 8px 32px rgba(0,0,0,0.18)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 32px 0 32px' }}>
+                  <h2 style={{ fontWeight: 700, fontSize: 22, margin: 0, color: '#22314a', letterSpacing: 0.5 }}>Quick Add Trip</h2>
+                  <button
+                    style={{ background: 'none', border: 'none', fontSize: 28, cursor: 'pointer', color: '#888', lineHeight: 1 }}
+                    onClick={() => setShowModal(false)}
+                    aria-label="Close"
+                  >
+                    &times;
+                  </button>
+                </div>
+                <form
+                  style={{
+                    display: 'flex', flexDirection: 'column', gap: 0, padding: '16px 32px 32px 32px',
+                  }}
+                  onSubmit={e => { e.preventDefault(); handleCommit(); }}
+                >
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 18 }}>
+                    <div style={{ flex: 1, minWidth: 180 }}>
+                      <label style={{ fontWeight: 500, marginBottom: 4, color: '#22314a' }}>Source</label>
+                      <input type="text" value={form.source} readOnly style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #cfd8dc', background: '#f5f7fa', fontWeight: 600, color: '#22314a' }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 180 }}>
+                      <label style={{ fontWeight: 500, marginBottom: 4, color: '#22314a' }}>Destination</label>
+                      <input type="text" value={form.destination} readOnly style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #cfd8dc', background: '#f5f7fa', fontWeight: 600, color: '#22314a' }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 18 }}>
+                    <div style={{ flex: 1, minWidth: 180 }}>
+                      <label style={{ fontWeight: 500, marginBottom: 4, color: '#22314a' }}>Hauling Rate</label>
+                      <input
+                        type="text"
+                        value={form.hauling}
+                        onChange={e => handleChange('hauling', e.target.value)}
+                        style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #cfd8dc', background: '#fff', color: '#22314a', fontWeight: 600 }}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        autoComplete="off"
+                      />
+                      {haulingError && (
+                        <div style={{ color: '#e11d48', marginTop: 4, fontWeight: 500, fontSize: 14 }}>{haulingError}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
+                    <button
+                      type="button"
+                      style={{ background: '#e11d48', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 32px', fontWeight: 600, cursor: 'pointer', fontSize: 16 }}
+                      onClick={() => setShowModal(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 32px', fontWeight: 600, cursor: form.hauling.trim() ? 'pointer' : 'not-allowed', fontSize: 16, display: 'flex', alignItems: 'center', gap: 8, opacity: form.hauling.trim() ? 1 : 0.6 }}
+                      disabled={!form.hauling.trim()}
+                    >
+                      <span style={{ fontSize: 20, fontWeight: 700 }}>+</span> Commit Entry
+                    </button>
+                  </div>
+                  {popup && (
+                    <div style={{ color: '#e11d48', marginTop: 12, textAlign: 'center', fontWeight: 500 }}>{popup}</div>
+                  )}
+                </form>
               </div>
             </div>
           )}

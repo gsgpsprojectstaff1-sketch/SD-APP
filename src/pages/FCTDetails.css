@@ -1,0 +1,15 @@
+.trips-details-container {
+  padding: 2rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.trips-details-container h1 {
+  color: #0f172a;
+  margin-bottom: 1rem;
+}
+
+.trips-details-container p {
+  color: #334155;
+}

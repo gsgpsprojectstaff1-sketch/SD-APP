@@ -45,7 +45,7 @@ function Login() {
       // Save logged-in user
       localStorage.setItem("user", JSON.stringify(user));
 
-      // Redirect to dashboard
+      // Redirect to dashboard1
       navigate("/dashboard1");
     } catch (err) {
       console.error(err);
