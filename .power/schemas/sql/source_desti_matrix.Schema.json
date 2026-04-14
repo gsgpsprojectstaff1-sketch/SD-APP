@@ -328,6 +328,38 @@
           "x-ms-permission": "read-write",
           "x-ms-sort": "none"
         },
+        "DHset": {
+          "title": "DHset",
+          "x-ms-capabilities": {
+            "filterFunctions": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "gt",
+              "ge",
+              "min",
+              "max",
+              "countdistinct",
+              "contains",
+              "startswith",
+              "endswith",
+              "length",
+              "indexof",
+              "replace",
+              "substring",
+              "substringof",
+              "tolower",
+              "toupper",
+              "trim",
+              "concat"
+            ]
+          },
+          "type": "string",
+          "maxLength": 255,
+          "x-ms-permission": "read-write",
+          "x-ms-sort": "none"
+        },
         "DriverRate": {
           "title": "DriverRate",
           "x-ms-capabilities": {
@@ -389,6 +421,350 @@
           "format": "double",
           "minimum": -7.922816251426434e+28,
           "maximum": 7.922816251426434e+28,
+          "x-ms-permission": "read-write",
+          "x-ms-sort": "none"
+        },
+        "LTDriverRate": {
+          "title": "LTDriverRate",
+          "x-ms-capabilities": {
+            "filterFunctions": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "gt",
+              "ge",
+              "min",
+              "max",
+              "countdistinct",
+              "add",
+              "sub",
+              "mul",
+              "div",
+              "round",
+              "floor",
+              "ceiling",
+              "negate",
+              "sum",
+              "average"
+            ]
+          },
+          "type": "number",
+          "format": "double",
+          "minimum": -7.922816251426434e+28,
+          "maximum": 7.922816251426434e+28,
+          "x-ms-permission": "read-write",
+          "x-ms-sort": "none"
+        },
+        "LTHelperRate": {
+          "title": "LTHelperRate",
+          "x-ms-capabilities": {
+            "filterFunctions": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "gt",
+              "ge",
+              "min",
+              "max",
+              "countdistinct",
+              "add",
+              "sub",
+              "mul",
+              "div",
+              "round",
+              "floor",
+              "ceiling",
+              "negate",
+              "sum",
+              "average"
+            ]
+          },
+          "type": "number",
+          "format": "double",
+          "minimum": -7.922816251426434e+28,
+          "maximum": 7.922816251426434e+28,
+          "x-ms-permission": "read-write",
+          "x-ms-sort": "none"
+        },
+        "TonnerDriverRate": {
+          "title": "TonnerDriverRate",
+          "x-ms-capabilities": {
+            "filterFunctions": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "gt",
+              "ge",
+              "min",
+              "max",
+              "countdistinct",
+              "add",
+              "sub",
+              "mul",
+              "div",
+              "round",
+              "floor",
+              "ceiling",
+              "negate",
+              "sum",
+              "average"
+            ]
+          },
+          "type": "number",
+          "format": "double",
+          "minimum": -7.922816251426434e+28,
+          "maximum": 7.922816251426434e+28,
+          "x-ms-permission": "read-write",
+          "x-ms-sort": "none"
+        },
+        "TonnerHelperRate": {
+          "title": "TonnerHelperRate",
+          "x-ms-capabilities": {
+            "filterFunctions": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "gt",
+              "ge",
+              "min",
+              "max",
+              "countdistinct",
+              "add",
+              "sub",
+              "mul",
+              "div",
+              "round",
+              "floor",
+              "ceiling",
+              "negate",
+              "sum",
+              "average"
+            ]
+          },
+          "type": "number",
+          "format": "double",
+          "minimum": -7.922816251426434e+28,
+          "maximum": 7.922816251426434e+28,
+          "x-ms-permission": "read-write",
+          "x-ms-sort": "none"
+        },
+        "STDriverRate": {
+          "title": "STDriverRate",
+          "x-ms-capabilities": {
+            "filterFunctions": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "gt",
+              "ge",
+              "min",
+              "max",
+              "countdistinct",
+              "add",
+              "sub",
+              "mul",
+              "div",
+              "round",
+              "floor",
+              "ceiling",
+              "negate",
+              "sum",
+              "average"
+            ]
+          },
+          "type": "number",
+          "format": "double",
+          "minimum": -7.922816251426434e+28,
+          "maximum": 7.922816251426434e+28,
+          "x-ms-permission": "read-write",
+          "x-ms-sort": "none"
+        },
+        "STHelperRate": {
+          "title": "STHelperRate",
+          "x-ms-capabilities": {
+            "filterFunctions": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "gt",
+              "ge",
+              "min",
+              "max",
+              "countdistinct",
+              "add",
+              "sub",
+              "mul",
+              "div",
+              "round",
+              "floor",
+              "ceiling",
+              "negate",
+              "sum",
+              "average"
+            ]
+          },
+          "type": "number",
+          "format": "double",
+          "minimum": -7.922816251426434e+28,
+          "maximum": 7.922816251426434e+28,
+          "x-ms-permission": "read-write",
+          "x-ms-sort": "none"
+        },
+        "TripCount": {
+          "title": "TripCount",
+          "x-ms-capabilities": {
+            "filterFunctions": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "gt",
+              "ge",
+              "min",
+              "max",
+              "countdistinct",
+              "add",
+              "sub",
+              "mul",
+              "div",
+              "round",
+              "floor",
+              "ceiling",
+              "negate",
+              "sum",
+              "average"
+            ]
+          },
+          "type": "number",
+          "format": "double",
+          "minimum": -7.922816251426434e+28,
+          "maximum": 7.922816251426434e+28,
+          "x-ms-permission": "read-write",
+          "x-ms-sort": "none"
+        },
+        "ModifiedTime": {
+          "title": "ModifiedTime",
+          "x-ms-capabilities": {
+            "filterFunctions": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "gt",
+              "ge",
+              "min",
+              "max",
+              "countdistinct",
+              "day",
+              "month",
+              "year",
+              "hour",
+              "minute",
+              "second",
+              "date",
+              "time"
+            ]
+          },
+          "type": "string",
+          "format": "date-no-tz",
+          "x-ms-permission": "read-write",
+          "x-ms-sort": "none"
+        },
+        "ModifiedBy": {
+          "title": "ModifiedBy",
+          "x-ms-capabilities": {
+            "filterFunctions": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "gt",
+              "ge",
+              "min",
+              "max",
+              "countdistinct",
+              "contains",
+              "startswith",
+              "endswith",
+              "length",
+              "indexof",
+              "replace",
+              "substring",
+              "substringof",
+              "tolower",
+              "toupper",
+              "trim",
+              "concat"
+            ]
+          },
+          "type": "string",
+          "maxLength": 255,
+          "x-ms-permission": "read-write",
+          "x-ms-sort": "none"
+        },
+        "CreatedTimeStamp": {
+          "title": "CreatedTimeStamp",
+          "x-ms-capabilities": {
+            "filterFunctions": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "gt",
+              "ge",
+              "min",
+              "max",
+              "countdistinct",
+              "day",
+              "month",
+              "year",
+              "hour",
+              "minute",
+              "second",
+              "date",
+              "time"
+            ]
+          },
+          "type": "string",
+          "format": "date-no-tz",
+          "x-ms-permission": "read-write",
+          "x-ms-sort": "none"
+        },
+        "CreatedBy": {
+          "title": "CreatedBy",
+          "x-ms-capabilities": {
+            "filterFunctions": [
+              "lt",
+              "le",
+              "eq",
+              "ne",
+              "gt",
+              "ge",
+              "min",
+              "max",
+              "countdistinct",
+              "contains",
+              "startswith",
+              "endswith",
+              "length",
+              "indexof",
+              "replace",
+              "substring",
+              "substringof",
+              "tolower",
+              "toupper",
+              "trim",
+              "concat"
+            ]
+          },
+          "type": "string",
+          "maxLength": 255,
           "x-ms-permission": "read-write",
           "x-ms-sort": "none"
         },

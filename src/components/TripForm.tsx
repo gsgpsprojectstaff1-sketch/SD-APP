@@ -2,6 +2,8 @@ import { PlusCircle, Search } from "lucide-react";
 import "./TripForm.css";
 
 export type Entry = {
+  ID?: number;
+  createdtimestamp: string;
   orderEntry: string;
   source: string;
   destination: string;
@@ -11,8 +13,19 @@ export type Entry = {
   index: string;
   km: string;
   hauling: string;
+  dhset?: string;
   driver: string;
   helper: string;
+  ltDriverRate?: string;
+  ltHelperRate?: string;
+  tonnerDriverRate?: string;
+  tonnerHelperRate?: string;
+  stDriverRate?: string;
+  stHelperRate?: string;
+  tripCount?: string;
+  modifiedBy?: string;
+  modifiedTime?: string;
+  createdBy?: string;
 };
 
 

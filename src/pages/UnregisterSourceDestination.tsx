@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Plus } from "lucide-react";
+
 import { useBadgeCounts } from "../AppBadgeContext";
 import type { Entry } from "../components/TripForm";
 import "./UnregisterSourceDestination.css";
@@ -7,11 +9,16 @@ import { LiveDMSView_CEMService } from "../generated/services/LiveDMSView_CEMSer
 import { Source_Desti_MatrixService } from "../generated/services/Source_Desti_MatrixService";
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "../components/DashboardHeader";
+import { createManilaTimestampValue, useCurrentUser } from "../lib/utils";
 
 interface SourceDestPair {
   source: string;
   destination: string;
 }
+
+const UNREGISTER_CACHE_TTL_MS = 60_000;
+const FETCH_PAGE_SIZE = 5000;
+let unregisteredCache: { timestamp: number; data: SourceDestPair[] } | null = null;
 
 const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: { unregisterCount: number, tripCount: number, fctCount: number }) => {
   const { refreshCounts } = useBadgeCounts();
@@ -22,8 +29,8 @@ const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
-  // For demo, static username. Replace with real user if available.
-  const username = "Bongolo";
+  // Use global user hook for consistency
+  const username = useCurrentUser();
   const navigate = useNavigate();
 
   // Modal state
@@ -32,6 +39,7 @@ const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: {
   // TripForm state
   // Remove orderEntry for this modal
   const emptyForm: Entry = {
+    createdtimestamp: "", // new field for created timestamp
     orderEntry: "", // not used
     source: "",
     destination: "",
@@ -79,19 +87,31 @@ const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: {
   };
 
   // Refetch logic extracted for reuse
-  const fetchUnregistered = async () => {
+  const fetchUnregistered = async (forceRefresh = false) => {
+    if (!forceRefresh && unregisteredCache && Date.now() - unregisteredCache.timestamp < UNREGISTER_CACHE_TTL_MS) {
+      setUnregistered(unregisteredCache.data);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const [tripRes, matrixRes] = await Promise.all([
-        LiveDMSView_CEMService.getAll(),
-        Source_Desti_MatrixService.getAll()
+        LiveDMSView_CEMService.getAll({
+          select: ["Source", "Destination"],
+          maxPageSize: FETCH_PAGE_SIZE,
+        }),
+        Source_Desti_MatrixService.getAll({
+          select: ["SourceName", "DestinationName"],
+          maxPageSize: FETCH_PAGE_SIZE,
+        })
       ]);
       if (
         tripRes.success && tripRes.data &&
         matrixRes.success && matrixRes.data
       ) {
         const registeredSet = new Set(
-          matrixRes.data.map((rec: any) => `${rec.SourceName?.toLowerCase()}|${rec.DestinationName?.toLowerCase()}`)
+          matrixRes.data.map((rec) => `${rec.SourceName?.toLowerCase()}|${rec.DestinationName?.toLowerCase()}`)
         );
         const uniquePairs = new Set<string>();
         const unregisteredPairs: SourceDestPair[] = [];
@@ -108,8 +128,10 @@ const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: {
           }
         }
         setUnregistered(unregisteredPairs);
+        unregisteredCache = { timestamp: Date.now(), data: unregisteredPairs };
       } else {
         setUnregistered([]);
+        unregisteredCache = { timestamp: Date.now(), data: [] };
       }
     } catch (err) {
       setUnregistered([]);
@@ -165,14 +187,24 @@ const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: {
       HaulingRate: form.hauling ? Number(form.hauling) : undefined,
       DriverRate: form.driver ? Number(form.driver) : undefined,
       HelperRate: form.helper ? Number(form.helper) : undefined,
+
+      CreatedTimeStamp: createManilaTimestampValue()
     };
     try {
       await Source_Desti_MatrixService.create(newRecord);
       setPopup("");
       setShowModal(false);
       setForm(emptyForm);
-      // Auto-refresh unregistered list
-      fetchUnregistered();
+      // Optimistically remove committed pair from current table for instant feedback.
+      setUnregistered((prev) => {
+        const next = prev.filter(
+          (pair) =>
+            pair.source.trim().toLowerCase() !== form.source.trim().toLowerCase() ||
+            pair.destination.trim().toLowerCase() !== form.destination.trim().toLowerCase()
+        );
+        unregisteredCache = { timestamp: Date.now(), data: next };
+        return next;
+      });
       // Refresh badge counts
       refreshCounts();
       // Show modern toast notification
@@ -206,14 +238,24 @@ const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: {
   };
 
   // Pagination logic
-  const totalPages = Math.ceil(unregistered.length / pageSize);
-  const filtered = unregistered.filter(
-    (pair) =>
-      pair.source.toLowerCase().includes(search.toLowerCase()) ||
-      pair.destination.toLowerCase().includes(search.toLowerCase())
-  );
+  const normalizedSearch = search.trim().toLowerCase();
+  const filtered = useMemo(() => {
+    if (!normalizedSearch) return unregistered;
+    return unregistered.filter(
+      (pair) =>
+        pair.source.toLowerCase().includes(normalizedSearch) ||
+        pair.destination.toLowerCase().includes(normalizedSearch)
+    );
+  }, [unregistered, normalizedSearch]);
+
   const pagedData = filtered.slice((page - 1) * pageSize, page * pageSize);
-  const filteredTotalPages = Math.ceil(filtered.length / pageSize);
+  const filteredTotalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const totalPages = filteredTotalPages;
+  const visibleCountLabel = `${pagedData.length} out of ${filtered.length}`;
+
+  useEffect(() => {
+    setPage((prev) => Math.min(prev, filteredTotalPages));
+  }, [filteredTotalPages]);
 
   // Helper to render page numbers (with ellipsis if needed)
   const renderPageNumbers = () => {
@@ -326,7 +368,18 @@ const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: {
         />
         <main className="dashboard-content">
           {loading ? (
-            <p style={{ marginLeft: 24 }}>Loading...</p>
+            <div className="usd-loading-wrap" role="status" aria-live="polite" aria-label="Loading unregistered source destination data">
+              <div className="usd-loading-road">
+                <div className="usd-loading-lane" />
+                <div className="usd-loading-truck" aria-hidden="true">
+                  <div className="usd-loading-truck-cabin" />
+                  <div className="usd-loading-truck-body" />
+                  <div className="usd-loading-wheel usd-loading-wheel-front" />
+                  <div className="usd-loading-wheel usd-loading-wheel-back" />
+                </div>
+              </div>
+              <p className="usd-loading-text">Loading data, truck is on the way...</p>
+            </div>
           ) : unregistered.length === 0 ? (
             <p style={{ marginLeft: 24, color: '#e11d48' }}>No unregistered source-destination pairs found or failed to load data.</p>
           ) : (
@@ -335,7 +388,6 @@ const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: {
                 <table className="usd-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 48, textAlign: 'center', border: 'none' }}>#</th>
                       {/* <th>OE</th> */}
                       <th>Source</th>
                       <th>Destination</th>
@@ -343,23 +395,22 @@ const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: {
                     </tr>
                   </thead>
                   <tbody>
-                    {pagedData.map((pair, idx) => {
-                      const uniqueKey = `${pair.source}|${pair.destination} ?? ''}`;
+                    {pagedData.map((pair) => {
+                      const uniqueKey = `${pair.source}|${pair.destination}`;
                       return (
                         <tr key={uniqueKey}>
-                          <td style={{ textAlign: 'center', fontWeight: 500, border: 'none' }}>
-                            {((page - 1) * pageSize) + idx + 1}
-                          </td>
                           {/* <td title={pair.OE}>{pair.OE || ''}</td> */}
                           <td title={pair.source}>{pair.source}</td>
                           <td title={pair.destination}>{pair.destination}</td>
                           <td style={{ textAlign: 'center' }}>
                             <button
                               className="usd-add-btn"
-                              style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', cursor: 'pointer', fontWeight: 500 }}
+                              aria-label="Add trip"
+                              title="Add trip"
+                              style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 6, width: 32, height: 32, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                               onClick={() => handleOpenModal(pair)}
                             >
-                              Add
+                              <Plus size={16} strokeWidth={2.5} />
                             </button>
                           </td>
                         </tr>
@@ -387,6 +438,9 @@ const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: {
                   >
                     Next &gt;
                   </button>
+                  <span style={{ whiteSpace: 'nowrap', color: '#222', fontSize: '0.92rem' }}>
+                    {visibleCountLabel}
+                  </span>
                 </div>
                 <div className="usd-per-page-wrapper">
                   <select

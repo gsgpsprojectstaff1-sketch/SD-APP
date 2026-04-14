@@ -88,7 +88,23 @@ import { useBadgeCounts } from "../AppBadgeContext";
 import DashboardHeader from "../components/DashboardHeader";
 import { Source_Desti_MatrixService } from "../generated/services/Source_Desti_MatrixService";
 import type { Source_Desti_Matrix } from "../generated/models/Source_Desti_MatrixModel";
+import { ensureRowReviewBaseline, isRowReviewOutdated, markRowReviewed } from "../lib/reviewState";
 import "./FCTDetails.css";
+
+const isFCTRowIncomplete = (row: Source_Desti_Matrix) => (
+  !row.ApprovedFuelBudget || !row.Trip_LaneCode || !row.FCT_LaneCode
+);
+
+const getUpdatedFCTFields = (previousRow: Source_Desti_Matrix, nextRow: Partial<Source_Desti_Matrix>) => {
+  const fields: string[] = [];
+
+  if (previousRow.ApprovedFuelBudget !== nextRow.ApprovedFuelBudget) fields.push("ApprovedFuelBudget");
+  if ((previousRow.Trip_LaneCode ?? "") !== (nextRow.Trip_LaneCode ?? "")) fields.push("Trip_LaneCode");
+  if ((previousRow.FCT_LaneCode ?? "") !== (nextRow.FCT_LaneCode ?? "")) fields.push("FCT_LaneCode");
+  if (previousRow.HaulingRate !== nextRow.HaulingRate) fields.push("HaulingRate");
+
+  return fields;
+};
 
 interface FCTDetailsProps {
   unregisterCount?: number;
@@ -98,10 +114,11 @@ interface FCTDetailsProps {
 
 const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount = 0, fctCount = 0 }) => {
   const { refreshCounts } = useBadgeCounts();
+  const { refreshFlag, triggerRefresh, lastRefreshEvent } = useRefresh();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeItem, setActiveItem] = useState("FCT");
   const navigate = useNavigate();
-  const username = "Bongolo";
+  const [username, setUsername] = useState<string>("User");
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<Source_Desti_Matrix[]>([]);
   const [loading, setLoading] = useState(false);
@@ -109,24 +126,70 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
   const [pageSize, setPageSize] = useState(10);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<Source_Desti_Matrix | null>(null);
+  const [externalNotice, setExternalNotice] = useState<string | null>(null);
+  const [staleRowIds, setStaleRowIds] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        const fullName = [parsedUser?.FirstName, parsedUser?.LastName]
+          .filter((part: string | undefined) => !!part)
+          .join(" ");
+        if (fullName) {
+          setUsername(fullName);
+        } else if (parsedUser?.UserName) {
+          setUsername(parsedUser.UserName);
+        }
+      } catch (err) {
+        console.error("Invalid user data in storage", err);
+      }
+    }
+  }, []);
   // Commit update
   const handleCommit = async (form: Partial<Source_Desti_Matrix>) => {
     if (!selectedRow || !selectedRow.ID) return;
     setLoading(true);
     const changedFields: Partial<Source_Desti_Matrix> = {
-      ApprovedFuelBudget: form.ApprovedFuelBudget ? Number(form.ApprovedFuelBudget) : undefined,
+      ApprovedFuelBudget: form.ApprovedFuelBudget == null || form.ApprovedFuelBudget === "" ? undefined : Number(form.ApprovedFuelBudget),
       Trip_LaneCode: form.Trip_LaneCode ?? undefined,
       FCT_LaneCode: form.FCT_LaneCode ?? undefined,
     };
+    const changedFieldNames = getUpdatedFCTFields(selectedRow, changedFields);
     await Source_Desti_MatrixService.update(String(selectedRow.ID), changedFields);
     setModalOpen(false);
     setSelectedRow(null);
     // Refresh data and badge
     Source_Desti_MatrixService.getAll().then(res => {
       const data = res.data || [];
-      setRows((data as Source_Desti_Matrix[]).filter((row: Source_Desti_Matrix) =>
-        !row.ApprovedFuelBudget || !row.Trip_LaneCode || !row.FCT_LaneCode
-      ));
+      const nextRow = { ...selectedRow, ...changedFields };
+      markRowReviewed("fct", nextRow);
+
+      const nextRows = data as Source_Desti_Matrix[];
+      const nextStaleRowIds = new Set<number>();
+
+      nextRows.forEach((row) => {
+        if (!isFCTRowIncomplete(row)) {
+          ensureRowReviewBaseline("fct", row);
+          if (typeof row.ID === "number" && isRowReviewOutdated("fct", row)) {
+            nextStaleRowIds.add(row.ID);
+          }
+        }
+      });
+
+      setStaleRowIds(nextStaleRowIds);
+      setRows(nextRows.filter((row) => isFCTRowIncomplete(row) || (typeof row.ID === "number" && nextStaleRowIds.has(row.ID))));
+      triggerRefresh({
+        source: 'fct-details',
+        entity: 'Source_Desti_Matrix',
+        action: 'updated',
+        recordId: selectedRow.ID,
+        fields: changedFieldNames,
+        message: changedFieldNames.includes('HaulingRate')
+          ? `FCT Details updated the Hauling Rate for ${selectedRow.SourceName} to ${selectedRow.DestinationName}.`
+          : `FCT Details updated ${selectedRow.SourceName} to ${selectedRow.DestinationName}.`,
+      });
       refreshCounts();
     }).finally(()=>setLoading(false));
   };
@@ -154,17 +217,44 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
   };
 
   // Fetch data
-  const { refreshFlag } = useRefresh();
   useEffect(() => {
     setLoading(true);
     Source_Desti_MatrixService.getAll().then(res => {
       const data = res.data || [];
-      // Filter: show only rows where Fuel Budget, Trip lane code, or FCT lane code are empty
-      setRows((data as Source_Desti_Matrix[]).filter((row: Source_Desti_Matrix) =>
-        !row.ApprovedFuelBudget || !row.Trip_LaneCode || !row.FCT_LaneCode
-      ));
+      const nextRows = data as Source_Desti_Matrix[];
+      const nextStaleRowIds = new Set<number>();
+
+      nextRows.forEach((row) => {
+        if (!isFCTRowIncomplete(row)) {
+          ensureRowReviewBaseline("fct", row);
+          if (typeof row.ID === "number" && isRowReviewOutdated("fct", row)) {
+            nextStaleRowIds.add(row.ID);
+          }
+        }
+      });
+
+      setStaleRowIds(nextStaleRowIds);
+      setRows(nextRows.filter((row) => isFCTRowIncomplete(row) || (typeof row.ID === "number" && nextStaleRowIds.has(row.ID))));
     }).finally(()=>setLoading(false));
   }, [refreshFlag]);
+
+  useEffect(() => {
+    if (!lastRefreshEvent || lastRefreshEvent.source === "fct-details") {
+      return;
+    }
+
+    if (lastRefreshEvent.fields?.includes("HaulingRate") && lastRefreshEvent.message) {
+      setExternalNotice(lastRefreshEvent.message);
+
+      const timeoutId = window.setTimeout(() => {
+        setExternalNotice(null);
+      }, 4000);
+
+      return () => {
+        window.clearTimeout(timeoutId);
+      };
+    }
+  }, [lastRefreshEvent]);
 
   // Pagination logic
   const filtered = rows.filter(
@@ -245,10 +335,47 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
           onSearchChange={handleSearchChange}
         />
         <main className="dashboard-content">
+          {externalNotice && (
+            <div style={{
+              margin: '0 24px 16px 24px',
+              padding: '12px 16px',
+              borderRadius: 10,
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              color: '#1d4ed8',
+              fontWeight: 500,
+            }}>
+              {externalNotice}
+            </div>
+          )}
+          {staleRowIds.size > 0 && (
+            <div style={{
+              margin: '0 24px 16px 24px',
+              padding: '12px 16px',
+              borderRadius: 10,
+              background: '#fff7ed',
+              border: '1px solid #fdba74',
+              color: '#9a3412',
+              fontWeight: 500,
+            }}>
+              {`${staleRowIds.size} completed FCT row(s) need review again because an upstream record was modified.`}
+            </div>
+          )}
           {loading ? (
-            <p style={{ marginLeft: 24 }}>Loading...</p>
+            <div className="truck-loading-wrap" role="status" aria-live="polite" aria-label="Loading FCT details data">
+              <div className="truck-loading-road">
+                <div className="truck-loading-lane" />
+                <div className="truck-loading-truck" aria-hidden="true">
+                  <div className="truck-loading-truck-cabin" />
+                  <div className="truck-loading-truck-body" />
+                  <div className="truck-loading-wheel truck-loading-wheel-front" />
+                  <div className="truck-loading-wheel truck-loading-wheel-back" />
+                </div>
+              </div>
+              <p className="truck-loading-text">Loading data, truck is on the way...</p>
+            </div>
           ) : rows.length === 0 ? (
-            <p style={{ marginLeft: 24, color: '#e11d48' }}>No incomplete FCT details found or failed to load data.</p>
+            <p style={{ marginLeft: 24, color: '#e11d48' }}>No incomplete or outdated FCT details found.</p>
           ) : (
             <div className="usd-table-card">
               <div className="usd-table-scroll">
@@ -256,6 +383,7 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
                   <thead>
                     <tr>
                       <th style={{ width: 48, textAlign: 'center', border: 'none' }}>#</th>
+                      <th>Status</th>
                       <th>Source</th>
                       <th>Destination</th>
                       <th>Trip Index</th>
@@ -271,8 +399,24 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
                   </thead>
                   <tbody>
                     {pagedData.map((row, idx) => (
-                      <tr key={row.ID || idx}>
+                      <tr key={row.ID || idx} style={typeof row.ID === 'number' && staleRowIds.has(row.ID) ? { background: '#fffaf0' } : undefined}>
                         <td style={{ textAlign: 'center', fontWeight: 500, border: 'none' }}>{((page - 1) * pageSize) + idx + 1}</td>
+                        <td>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: 110,
+                            padding: '4px 10px',
+                            borderRadius: 999,
+                            background: typeof row.ID === 'number' && staleRowIds.has(row.ID) ? '#fed7aa' : '#dbeafe',
+                            color: typeof row.ID === 'number' && staleRowIds.has(row.ID) ? '#9a3412' : '#1d4ed8',
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}>
+                            {typeof row.ID === 'number' && staleRowIds.has(row.ID) ? 'Needs review' : 'Incomplete'}
+                          </span>
+                        </td>
                         <td title={row.SourceName}>{row.SourceName}</td>
                         <td title={row.DestinationName}>{row.DestinationName}</td>
                         <td>{row.TripIndex ?? ''}</td>

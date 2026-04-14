@@ -31,7 +31,7 @@ export class Source_Desti_MatrixService {
     return result;
   }
 
-  public static async delete(id: number): Promise<void> {
+  public static async delete(id: string): Promise<void> {
     await Source_Desti_MatrixService.client.deleteRecordAsync(
       Source_Desti_MatrixService.dataSourceName,
       id.toString());

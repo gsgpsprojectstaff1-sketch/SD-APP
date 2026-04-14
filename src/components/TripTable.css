@@ -5,65 +5,46 @@
   width: 100%;
   flex: 1 1 auto;
   background: #fff;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+  position: relative;
+  isolation: isolate;
   min-height: 0;
-  max-height: calc(100vh - 320px); /* Adjust 320px based on header/footer height */
+  max-height: none;
+  overscroll-behavior: contain;
 }
 
-/* Make tbody scrollable and fix thead */
+/* Use a normal table layout so sticky columns work on horizontal scroll. */
 .trip-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 800px;
-  table-layout: auto;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-.trip-table thead {
-  flex: 0 0 auto;
-  width: 100%;
-  display: table;;
-  table-layout: fixed;
-}
-.trip-table tbody {
-  display: block;
-  flex: 1 1 auto;
-  overflow-y: auto;
-  width: 100%;
-  min-height: 0;
-  max-height: 100%;
-}
-.trip-table tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
-}
-
-.trip-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 800px;
+  --freeze-col-1-width: 40px;
+  --freeze-col-2-width: 210px;
+  --freeze-col-3-width: 210px;
+  min-width: max(100%, 2200px);
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: auto;
 }
 
 
 .trip-table th, .trip-table td {
-  border: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
   padding: 0.5rem 0.75rem;
   text-align: left;
   background: #fff;
-  min-width: 120px;
+  min-width: 130px;
   max-width: 400px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  resize: horizontal;
-  position: static !important;
-  z-index: auto !important;
   height: 38px;
+}
+
+.trip-table th:first-child,
+.trip-table td:first-child {
+  border-left: 1px solid #e5e7eb;
+}
+
+.trip-table thead th {
+  border-top: 1px solid #e5e7eb;
 }
 
 .trip-table td input[type="checkbox"] {
@@ -77,9 +58,75 @@
   cursor: grab;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
   box-shadow: 0 2px 4px -2px #0001;
   height: 38px;
+}
+
+/* Keep first three columns visible while horizontally scrolling. */
+.trip-table .sticky-col {
+  position: sticky;
+  background: #fff;
+}
+
+.trip-table .sticky-col-1 {
+  left: 0;
+  min-width: var(--freeze-col-1-width);
+  width: var(--freeze-col-1-width);
+  z-index: 14;
+}
+
+.trip-table .sticky-col-2 {
+  left: var(--freeze-col-1-width);
+  min-width: var(--freeze-col-2-width);
+  width: var(--freeze-col-2-width);
+  z-index: 14;
+}
+
+.trip-table .sticky-col-3 {
+  left: calc(var(--freeze-col-1-width) + var(--freeze-col-2-width));
+  min-width: var(--freeze-col-3-width);
+  width: var(--freeze-col-3-width);
+  z-index: 14;
+  box-shadow: 6px 0 8px -8px rgba(15, 23, 42, 0.35);
+}
+
+.trip-table thead .sticky-col {
+  z-index: 25;
+}
+
+/* Hard fallback: always freeze first 3 columns from the left. */
+.trip-table tr > :is(th, td):nth-child(1) {
+  position: sticky;
+  left: 0;
+  min-width: var(--freeze-col-1-width);
+  width: var(--freeze-col-1-width);
+  background: #fff;
+}
+
+.trip-table tr > :is(th, td):nth-child(2) {
+  position: sticky;
+  left: var(--freeze-col-1-width);
+  min-width: var(--freeze-col-2-width);
+  width: var(--freeze-col-2-width);
+  background: #fff;
+}
+
+.trip-table tr > :is(th, td):nth-child(3) {
+  position: sticky;
+  left: calc(var(--freeze-col-1-width) + var(--freeze-col-2-width));
+  min-width: var(--freeze-col-3-width);
+  width: var(--freeze-col-3-width);
+  background: #fff;
+  box-shadow: 6px 0 8px -8px rgba(15, 23, 42, 0.35);
+}
+
+.trip-table tbody tr > :is(td):nth-child(-n + 3) {
+  z-index: 16;
+}
+
+.trip-table thead tr > :is(th):nth-child(-n + 3) {
+  z-index: 26;
 }
 
 @media (max-width: 900px) {
@@ -92,7 +139,7 @@
     height: 32px;
   }
   .trip-table-scroll {
-    height: 370px;
+    height: auto;
   }
 }
 
@@ -106,7 +153,7 @@
     height: 28px;
   }
   .trip-table-scroll {
-    height: 180px;
+    height: auto;
   }
 }
 

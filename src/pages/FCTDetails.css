@@ -13,3 +13,149 @@
 .trips-details-container p {
   color: #334155;
 }
+
+.truck-loading-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 260px;
+  margin: 8px 18px 0 0;
+  padding: 24px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 12px 0 rgba(30,64,175,0.06), 0 1px 3px 0 rgba(0,0,0,0.03);
+}
+
+.truck-loading-road {
+  position: relative;
+  width: min(560px, 92%);
+  height: 84px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 45%, #cbd5e1 100%);
+  overflow: hidden;
+}
+
+.truck-loading-lane {
+  position: absolute;
+  left: -120px;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  background: repeating-linear-gradient(90deg, #f8fafc 0 38px, transparent 38px 66px);
+  animation: truck-lane-move 0.8s linear infinite;
+  opacity: 0.85;
+}
+
+.truck-loading-truck {
+  position: absolute;
+  bottom: 20px;
+  left: -110px;
+  width: 112px;
+  height: 44px;
+  animation: truck-drive 2.6s ease-in-out infinite;
+}
+
+.truck-loading-truck-cabin {
+  position: absolute;
+  right: 0;
+  bottom: 8px;
+  width: 34px;
+  height: 24px;
+  border-radius: 6px 8px 8px 4px;
+  background: #0f4c81;
+}
+
+.truck-loading-truck-cabin::before {
+  content: "";
+  position: absolute;
+  right: 7px;
+  top: 5px;
+  width: 13px;
+  height: 8px;
+  border-radius: 2px;
+  background: #dbeafe;
+}
+
+.truck-loading-truck-body {
+  position: absolute;
+  left: 0;
+  bottom: 8px;
+  width: 72px;
+  height: 28px;
+  border-radius: 6px;
+  background: #2563eb;
+}
+
+.truck-loading-wheel {
+  position: absolute;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0f172a;
+  border: 2px solid #cbd5e1;
+  animation: truck-wheel-spin 0.35s linear infinite;
+}
+
+.truck-loading-wheel-front {
+  right: 10px;
+}
+
+.truck-loading-wheel-back {
+  left: 12px;
+}
+
+.truck-loading-text {
+  margin: 0;
+  font-size: 0.96rem;
+  color: #334155;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+@keyframes truck-drive {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(700px);
+  }
+}
+
+@keyframes truck-lane-move {
+  0% {
+    transform: translateY(-50%) translateX(0);
+  }
+  100% {
+    transform: translateY(-50%) translateX(-66px);
+  }
+}
+
+@keyframes truck-wheel-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 900px) {
+  .truck-loading-wrap {
+    margin-right: 6px;
+    min-height: 220px;
+    padding: 18px;
+  }
+
+  .truck-loading-road {
+    height: 72px;
+  }
+
+  .truck-loading-truck {
+    transform: scale(0.92);
+    transform-origin: left bottom;
+  }
+}

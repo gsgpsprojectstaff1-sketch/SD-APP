@@ -380,7 +380,7 @@ body {
   padding: 0.7rem 0.8rem;
   text-align: left;
   border: none;
-  background: rgba(148, 163, 184, 0.12);
+  background: rgba(87, 138, 209, 0.12);
   color: #cbd5e1;
   cursor: pointer;
   font-size: 0.92rem;
@@ -435,7 +435,7 @@ body {
   gap: 1rem;
   padding: 1.2rem 1.25rem;
   background: #f8fafc;
-  overflow-y: auto;
+  overflow-y: hidden;
   overflow-x: hidden;
 }
 
@@ -562,7 +562,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  overflow-y: auto;
+  overflow-y: hidden;
   flex: 1;
   min-height: 0;
 }
@@ -579,9 +579,20 @@ body {
   border-radius: 0.65rem;
   padding: 0.6rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  text-align: center;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.stat-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
 }
 
 .stat-icon {
@@ -617,6 +628,9 @@ body {
 .trip-table-card {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .trip-form h3,
@@ -708,7 +722,10 @@ body {
 .trip-table-scroll {
   overflow-x: auto;
   overflow-y: auto;
-  max-height: calc(100vh - 22rem);
+  max-height: none;
+  flex: 1;
+  min-height: 0;
+  overscroll-behavior: contain;
 }
 
 .trip-table {
@@ -798,6 +815,8 @@ body {
   .stat-card {
     padding: 0.5rem;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
   }
 
@@ -835,7 +854,7 @@ body {
   }
 
   .trip-table-scroll {
-    max-height: calc(100vh - 20rem);
+    max-height: none;
   }
 
   .trip-table th,
@@ -914,7 +933,11 @@ body {
 
   .stat-card {
     padding: 0.4rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     gap: 0.3rem;
+    text-align: center;
   }
 
   .stat-icon {

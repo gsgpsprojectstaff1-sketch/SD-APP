@@ -12,7 +12,19 @@ export interface Source_Desti_Matrix {
   TripIndex?: number;
   TripKM?: number;
   HaulingRate?: number;
+  DHset?: string;
   DriverRate?: number;
   HelperRate?: number;
+  LTDriverRate?: number;
+  LTHelperRate?: number;
+  TonnerDriverRate?: number;
+  TonnerHelperRate?: number;
+  STDriverRate?: number;
+  STHelperRate?: number;
+  TripCount?: number;
+  ModifiedTime?: string;
+  ModifiedBy?: string;
+  CreatedTimeStamp?: string;
+  CreatedBy?: string;
   ID?: number;
 }
