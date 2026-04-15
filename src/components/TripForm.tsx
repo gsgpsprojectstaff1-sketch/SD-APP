@@ -13,7 +13,6 @@ export type Entry = {
   index: string;
   km: string;
   hauling: string;
-  dhset?: string;
   driver: string;
   helper: string;
   ltDriverRate?: string;
@@ -26,6 +25,8 @@ export type Entry = {
   modifiedBy?: string;
   modifiedTime?: string;
   createdBy?: string;
+  fctApprovedBy?: string;
+  fctApprovedTimeStamp?: string;
 };
 
 

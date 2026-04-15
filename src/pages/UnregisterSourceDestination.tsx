@@ -188,7 +188,8 @@ const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: {
       DriverRate: form.driver ? Number(form.driver) : undefined,
       HelperRate: form.helper ? Number(form.helper) : undefined,
 
-      CreatedTimeStamp: createManilaTimestampValue()
+      CreatedTimeStamp: createManilaTimestampValue(),
+      CreatedBy: username?.trim() ? username.trim() : "User"
     };
     try {
       await Source_Desti_MatrixService.create(newRecord);
@@ -419,40 +420,40 @@ const UnregisterSourceDestination = ({ unregisterCount, tripCount, fctCount }: {
                   </tbody>
                 </table>
               </div>
-              <div className="usd-pagination">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <button
-                    className="usd-pagination-btn"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                  >
-                    &lt; Previous
-                  </button>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    {renderPageNumbers()}
+              <div className="usd-pagination unregister-pagination">
+                <span className="unregister-pagination-count">{visibleCountLabel}</span>
+                <div className="unregister-pagination-controls">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      className="usd-pagination-btn"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      &lt; Previous
+                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      {renderPageNumbers()}
+                    </div>
+                    <button
+                      className="usd-pagination-btn"
+                      onClick={() => setPage((p) => Math.min(filteredTotalPages, p + 1))}
+                      disabled={page === filteredTotalPages}
+                    >
+                      Next &gt;
+                    </button>
                   </div>
-                  <button
-                    className="usd-pagination-btn"
-                    onClick={() => setPage((p) => Math.min(filteredTotalPages, p + 1))}
-                    disabled={page === filteredTotalPages}
-                  >
-                    Next &gt;
-                  </button>
-                  <span style={{ whiteSpace: 'nowrap', color: '#222', fontSize: '0.92rem' }}>
-                    {visibleCountLabel}
-                  </span>
-                </div>
-                <div className="usd-per-page-wrapper">
-                  <select
-                    className="usd-per-page-select"
-                    value={pageSize}
-                    onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-                  >
-                    {[10, 20, 50, 100].map(size => (
-                      <option key={size} value={size}>{size}</option>
-                    ))}
-                  </select>
-                  <span className="usd-per-page-label">per page</span>
+                  <div className="usd-per-page-wrapper">
+                    <select
+                      className="usd-per-page-select"
+                      value={pageSize}
+                      onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+                    >
+                      {[10, 20, 50, 100].map(size => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                    <span className="usd-per-page-label">per page</span>
+                  </div>
                 </div>
               </div>
             </div>

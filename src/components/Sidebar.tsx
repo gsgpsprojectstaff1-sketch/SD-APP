@@ -14,7 +14,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ activeItem, onItemClick, onLogout, isOpen = true }: SidebarProps) => {
-  const { unregisterCount, tripCount, fctCount } = useBadgeCounts();
+  const { unregisterCount, tripCount, tripNeedsReview, fctCount, fctNeedsReview } = useBadgeCounts();
   // Submenu is open if Trips is the active item
   // const submenuOpen = activeItem === "Trips" || activeItem === "Unregister-Source-Destination";
 
@@ -93,27 +93,40 @@ const Sidebar = ({ activeItem, onItemClick, onLogout, isOpen = true }: SidebarPr
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Truck size={16} /> Trip
           </span>
-          {typeof tripCount === 'number' && tripCount > 0 && (
-            <span style={{
-              position: 'absolute',
-              right: 16,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: '#1976d2',
-              color: '#fff',
-              borderRadius: '8px',
-              fontSize: '0.72rem',
-              padding: '1px 7px',
-              fontWeight: 700,
-              minWidth: 18,
-              height: 18,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: 1,
-              zIndex: 1
-            }}>{tripCount}</span>
-          )}
+          <div style={{ position: 'absolute', right: 16, display: 'flex', gap: 4, alignItems: 'center' }}>
+            {typeof tripCount === 'number' && tripCount > 0 && (
+              <span style={{
+                background: '#1976d2',
+                color: '#fff',
+                borderRadius: '8px',
+                fontSize: '0.72rem',
+                padding: '1px 7px',
+                fontWeight: 700,
+                minWidth: 18,
+                height: 18,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1,
+              }}>{tripCount}</span>
+            )}
+            {typeof tripNeedsReview === 'number' && tripNeedsReview > 0 && (
+              <span style={{
+                background: '#dc2626',
+                color: '#fff',
+                borderRadius: '8px',
+                fontSize: '0.72rem',
+                padding: '1px 7px',
+                fontWeight: 700,
+                minWidth: 18,
+                height: 18,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1,
+              }}>{tripNeedsReview}</span>
+            )}
+          </div>
         </button>
 
         {/* FCT menu item */}
@@ -128,27 +141,40 @@ const Sidebar = ({ activeItem, onItemClick, onLogout, isOpen = true }: SidebarPr
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <FileText size={16} /> FCT
           </span>
-          {typeof fctCount === 'number' && fctCount > 0 && (
-            <span style={{
-              position: 'absolute',
-              right: 16,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: '#f59e42',
-              color: '#fff',
-              borderRadius: '8px',
-              fontSize: '0.72rem',
-              padding: '1px 7px',
-              fontWeight: 700,
-              minWidth: 18,
-              height: 18,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: 1,
-              zIndex: 1
-            }}>{fctCount}</span>
-          )}
+          <div style={{ position: 'absolute', right: 16, display: 'flex', gap: 4, alignItems: 'center' }}>
+            {typeof fctCount === 'number' && fctCount > 0 && (
+              <span style={{
+                background: '#f59e42',
+                color: '#fff',
+                borderRadius: '8px',
+                fontSize: '0.72rem',
+                padding: '1px 7px',
+                fontWeight: 700,
+                minWidth: 18,
+                height: 18,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1,
+              }}>{fctCount}</span>
+            )}
+            {typeof fctNeedsReview === 'number' && fctNeedsReview > 0 && (
+              <span style={{
+                background: '#dc2626',
+                color: '#fff',
+                borderRadius: '8px',
+                fontSize: '0.72rem',
+                padding: '1px 7px',
+                fontWeight: 700,
+                minWidth: 18,
+                height: 18,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1,
+              }}>{fctNeedsReview}</span>
+            )}
+          </div>
         </button>
       </nav>
 

@@ -21,10 +21,8 @@ function UpdateFCTModal({ open, onClose, onCommit, row }: {
   if (!open || !row) return null;
   // Disable commit if any required field is empty
   const isCommitDisabled =
-    form.ApprovedFuelBudget === undefined ||
-    form.ApprovedFuelBudget === null ||
-    (typeof form.ApprovedFuelBudget === 'string' ? (form.ApprovedFuelBudget as string).trim() === '' : false) ||
-    (typeof form.ApprovedFuelBudget === 'number' && Number.isNaN(form.ApprovedFuelBudget)) ||
+    form.ApprovedFuelBudget == null ||
+    Number.isNaN(form.ApprovedFuelBudget) ||
     String(form.Trip_LaneCode ?? '').trim() === '' ||
     String(form.FCT_LaneCode ?? '').trim() === '';
 
@@ -88,12 +86,34 @@ import { useBadgeCounts } from "../AppBadgeContext";
 import DashboardHeader from "../components/DashboardHeader";
 import { Source_Desti_MatrixService } from "../generated/services/Source_Desti_MatrixService";
 import type { Source_Desti_Matrix } from "../generated/models/Source_Desti_MatrixModel";
-import { ensureRowReviewBaseline, isRowReviewOutdated, markRowReviewed } from "../lib/reviewState";
 import "./FCTDetails.css";
+
+const isReviewFlagOn = (value: unknown) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "y";
+  }
+  return false;
+};
 
 const isFCTRowIncomplete = (row: Source_Desti_Matrix) => (
   !row.ApprovedFuelBudget || !row.Trip_LaneCode || !row.FCT_LaneCode
 );
+
+const isFCTRowForReview = (row: Source_Desti_Matrix) => isReviewFlagOn(row.FCTNeedsReview);
+
+const getRowValue = (row: Source_Desti_Matrix, keys: string[]): string | number => {
+  const record = row as Record<string, unknown>;
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'number' || typeof value === 'string') {
+      return value;
+    }
+  }
+  return '';
+};
 
 const getUpdatedFCTFields = (previousRow: Source_Desti_Matrix, nextRow: Partial<Source_Desti_Matrix>) => {
   const fields: string[] = [];
@@ -114,7 +134,7 @@ interface FCTDetailsProps {
 
 const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount = 0, fctCount = 0 }) => {
   const { refreshCounts } = useBadgeCounts();
-  const { refreshFlag, triggerRefresh, lastRefreshEvent } = useRefresh();
+  const { refreshFlag, triggerRefresh } = useRefresh();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeItem, setActiveItem] = useState("FCT");
   const navigate = useNavigate();
@@ -126,8 +146,6 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
   const [pageSize, setPageSize] = useState(10);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<Source_Desti_Matrix | null>(null);
-  const [externalNotice, setExternalNotice] = useState<string | null>(null);
-  const [staleRowIds, setStaleRowIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -152,9 +170,12 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
     if (!selectedRow || !selectedRow.ID) return;
     setLoading(true);
     const changedFields: Partial<Source_Desti_Matrix> = {
-      ApprovedFuelBudget: form.ApprovedFuelBudget == null || form.ApprovedFuelBudget === "" ? undefined : Number(form.ApprovedFuelBudget),
+      ApprovedFuelBudget: form.ApprovedFuelBudget == null ? undefined : Number(form.ApprovedFuelBudget),
       Trip_LaneCode: form.Trip_LaneCode ?? undefined,
       FCT_LaneCode: form.FCT_LaneCode ?? undefined,
+      FCTNeedsReview: "0",
+      FCTApprovedBy: username,
+      FCTApprovedTimeStamp: new Date().toISOString(),
     };
     const changedFieldNames = getUpdatedFCTFields(selectedRow, changedFields);
     await Source_Desti_MatrixService.update(String(selectedRow.ID), changedFields);
@@ -163,23 +184,7 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
     // Refresh data and badge
     Source_Desti_MatrixService.getAll().then(res => {
       const data = res.data || [];
-      const nextRow = { ...selectedRow, ...changedFields };
-      markRowReviewed("fct", nextRow);
-
-      const nextRows = data as Source_Desti_Matrix[];
-      const nextStaleRowIds = new Set<number>();
-
-      nextRows.forEach((row) => {
-        if (!isFCTRowIncomplete(row)) {
-          ensureRowReviewBaseline("fct", row);
-          if (typeof row.ID === "number" && isRowReviewOutdated("fct", row)) {
-            nextStaleRowIds.add(row.ID);
-          }
-        }
-      });
-
-      setStaleRowIds(nextStaleRowIds);
-      setRows(nextRows.filter((row) => isFCTRowIncomplete(row) || (typeof row.ID === "number" && nextStaleRowIds.has(row.ID))));
+      setRows((data as Source_Desti_Matrix[]).filter((row) => isFCTRowIncomplete(row) || isFCTRowForReview(row)));
       triggerRefresh({
         source: 'fct-details',
         entity: 'Source_Desti_Matrix',
@@ -221,40 +226,9 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
     setLoading(true);
     Source_Desti_MatrixService.getAll().then(res => {
       const data = res.data || [];
-      const nextRows = data as Source_Desti_Matrix[];
-      const nextStaleRowIds = new Set<number>();
-
-      nextRows.forEach((row) => {
-        if (!isFCTRowIncomplete(row)) {
-          ensureRowReviewBaseline("fct", row);
-          if (typeof row.ID === "number" && isRowReviewOutdated("fct", row)) {
-            nextStaleRowIds.add(row.ID);
-          }
-        }
-      });
-
-      setStaleRowIds(nextStaleRowIds);
-      setRows(nextRows.filter((row) => isFCTRowIncomplete(row) || (typeof row.ID === "number" && nextStaleRowIds.has(row.ID))));
+      setRows((data as Source_Desti_Matrix[]).filter((row) => isFCTRowIncomplete(row) || isFCTRowForReview(row)));
     }).finally(()=>setLoading(false));
   }, [refreshFlag]);
-
-  useEffect(() => {
-    if (!lastRefreshEvent || lastRefreshEvent.source === "fct-details") {
-      return;
-    }
-
-    if (lastRefreshEvent.fields?.includes("HaulingRate") && lastRefreshEvent.message) {
-      setExternalNotice(lastRefreshEvent.message);
-
-      const timeoutId = window.setTimeout(() => {
-        setExternalNotice(null);
-      }, 4000);
-
-      return () => {
-        window.clearTimeout(timeoutId);
-      };
-    }
-  }, [lastRefreshEvent]);
 
   // Pagination logic
   const filtered = rows.filter(
@@ -262,8 +236,14 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
       (row.SourceName?.toLowerCase() || "").includes(search.toLowerCase()) ||
       (row.DestinationName?.toLowerCase() || "").includes(search.toLowerCase())
   );
-  const totalPages = Math.ceil(filtered.length / pageSize);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pagedData = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   // Helper to render page numbers
   const renderPageNumbers = () => {
@@ -295,7 +275,7 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
             padding: '6px 12px',
             borderRadius: 4,
             border: 'none',
-            background: page === i ? '#1976d2' : '#fff',
+            background: page === i ? '#00bcd4' : '#fff',
             color: page === i ? '#fff' : '#222',
             fontWeight: page === i ? 'bold' : 'normal',
             cursor: 'pointer',
@@ -335,20 +315,7 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
           onSearchChange={handleSearchChange}
         />
         <main className="dashboard-content">
-          {externalNotice && (
-            <div style={{
-              margin: '0 24px 16px 24px',
-              padding: '12px 16px',
-              borderRadius: 10,
-              background: '#eff6ff',
-              border: '1px solid #bfdbfe',
-              color: '#1d4ed8',
-              fontWeight: 500,
-            }}>
-              {externalNotice}
-            </div>
-          )}
-          {staleRowIds.size > 0 && (
+          {rows.filter((row) => isFCTRowForReview(row)).length > 0 && (
             <div style={{
               margin: '0 24px 16px 24px',
               padding: '12px 16px',
@@ -358,7 +325,7 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
               color: '#9a3412',
               fontWeight: 500,
             }}>
-              {`${staleRowIds.size} completed FCT row(s) need review again because an upstream record was modified.`}
+              {`${rows.filter((row) => isFCTRowForReview(row)).length} FCT row(s) need review again because SAP Trip Table changed.`}
             </div>
           )}
           {loading ? (
@@ -377,19 +344,25 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
           ) : rows.length === 0 ? (
             <p style={{ marginLeft: 24, color: '#e11d48' }}>No incomplete or outdated FCT details found.</p>
           ) : (
-            <div className="usd-table-card">
-              <div className="usd-table-scroll">
-                <table className="usd-table">
+            <div className="usd-table-card fct-details-card">
+              <div className="usd-table-scroll fct-details-scroll">
+                <table className="usd-table fct-details-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 48, textAlign: 'center', border: 'none' }}>#</th>
                       <th>Status</th>
                       <th>Source</th>
                       <th>Destination</th>
+                      <th>Trip Count</th>
                       <th>Trip Index</th>
                       <th>Trip KM</th>
                       <th>Driver Rate</th>
                       <th>Helper Rate</th>
+                      <th>LT Driver Rate</th>
+                      <th>LT Helper Rate</th>
+                      <th>Tonner Driver Rate</th>
+                      <th>Tonner Helper Rate</th>
+                      <th>ST Driver Rate</th>
+                      <th>ST Helper Rate</th>
                       <th>Hauling Rate</th>
                       <th>Fuel Budget</th>
                       <th>Trip lane code</th>
@@ -399,8 +372,7 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
                   </thead>
                   <tbody>
                     {pagedData.map((row, idx) => (
-                      <tr key={row.ID || idx} style={typeof row.ID === 'number' && staleRowIds.has(row.ID) ? { background: '#fffaf0' } : undefined}>
-                        <td style={{ textAlign: 'center', fontWeight: 500, border: 'none' }}>{((page - 1) * pageSize) + idx + 1}</td>
+                      <tr key={row.ID || idx} style={isFCTRowForReview(row) ? { background: '#fffaf0' } : undefined}>
                         <td>
                           <span style={{
                             display: 'inline-flex',
@@ -409,20 +381,27 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
                             minWidth: 110,
                             padding: '4px 10px',
                             borderRadius: 999,
-                            background: typeof row.ID === 'number' && staleRowIds.has(row.ID) ? '#fed7aa' : '#dbeafe',
-                            color: typeof row.ID === 'number' && staleRowIds.has(row.ID) ? '#9a3412' : '#1d4ed8',
+                            background: isFCTRowForReview(row) ? '#fed7aa' : '#dbeafe',
+                            color: isFCTRowForReview(row) ? '#9a3412' : '#1d4ed8',
                             fontSize: 12,
                             fontWeight: 700,
                           }}>
-                            {typeof row.ID === 'number' && staleRowIds.has(row.ID) ? 'Needs review' : 'Incomplete'}
+                            {isFCTRowForReview(row) ? 'Needs review' : 'Incomplete'}
                           </span>
                         </td>
                         <td title={row.SourceName}>{row.SourceName}</td>
                         <td title={row.DestinationName}>{row.DestinationName}</td>
+                        <td>{String(getRowValue(row, ['TripCount', 'tripCount', 'Trip_Count', 'trip_count']))}</td>
                         <td>{row.TripIndex ?? ''}</td>
                         <td>{row.TripKM ?? ''}</td>
                         <td>{row.DriverRate ?? ''}</td>
                         <td>{row.HelperRate ?? ''}</td>
+                        <td>{String(getRowValue(row, ['LTDriverRate', 'ltDriverRate', 'LT_DriverRate', 'lt_driver_rate']))}</td>
+                        <td>{String(getRowValue(row, ['LTHelperRate', 'ltHelperRate', 'LT_HelperRate', 'lt_helper_rate']))}</td>
+                        <td>{String(getRowValue(row, ['TonnerDriverRate', 'tonnerDriverRate', 'Tonner_DriverRate', 'tonner_driver_rate']))}</td>
+                        <td>{String(getRowValue(row, ['TonnerHelperRate', 'tonnerHelperRate', 'Tonner_HelperRate', 'tonner_helper_rate']))}</td>
+                        <td>{String(getRowValue(row, ['STDriverRate', 'stDriverRate', 'ST_DriverRate', 'st_driver_rate']))}</td>
+                        <td>{String(getRowValue(row, ['STHelperRate', 'stHelperRate', 'ST_HelperRate', 'st_helper_rate']))}</td>
                         <td>{row.HaulingRate ?? ''}</td>
                         <td>{row.ApprovedFuelBudget ?? ''}</td>
                         <td>{row.Trip_LaneCode ?? ''}</td>
@@ -441,37 +420,40 @@ const FCTDetails: React.FC<FCTDetailsProps> = ({ unregisterCount = 0, tripCount 
                   </tbody>
                 </table>
               </div>
-              <div className="usd-pagination">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <button
-                    className="usd-pagination-btn"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                  >
-                    &lt; Previous
-                  </button>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    {renderPageNumbers()}
+              <div className="usd-pagination fct-details-pagination">
+                <span className="fct-details-count">{`${pagedData.length} out of ${filtered.length}`}</span>
+                <div className="fct-details-pagination-controls">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      className="usd-pagination-btn"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      &lt; Previous
+                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      {renderPageNumbers()}
+                    </div>
+                    <button
+                      className="usd-pagination-btn"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                    >
+                      Next &gt;
+                    </button>
                   </div>
-                  <button
-                    className="usd-pagination-btn"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                  >
-                    Next &gt;
-                  </button>
-                </div>
-                <div className="usd-per-page-wrapper">
-                  <select
-                    className="usd-per-page-select"
-                    value={pageSize}
-                    onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-                  >
-                    {[10, 20, 50, 100].map(size => (
-                      <option key={size} value={size}>{size}</option>
-                    ))}
-                  </select>
-                  <span className="usd-per-page-label">per page</span>
+                  <div className="usd-per-page-wrapper">
+                    <select
+                      className="usd-per-page-select"
+                      value={pageSize}
+                      onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+                    >
+                      {[10, 20, 50, 100].map(size => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                    <span className="usd-per-page-label">per page</span>
+                  </div>
                 </div>
               </div>
             </div>

@@ -14,6 +14,77 @@
   color: #334155;
 }
 
+.fct-details-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
+}
+
+.fct-details-card .fct-details-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+
+.fct-details-table {
+  width: max-content;
+  min-width: max(100%, 2200px);
+  table-layout: auto;
+  font-size: 11px;
+}
+
+.usd-table {
+  font-size: 11px; /* FCTDetails specific font size */
+}
+
+.usd-table th,
+.usd-table td {
+  font-size: 11px; /* FCTDetails specific font size */
+}
+
+.fct-details-table th,
+.fct-details-table td {
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.fct-details-pagination {
+  position: static;
+  margin-top: 6px;
+  padding: 8px 10px 6px;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: none;
+}
+
+.fct-details-count {
+  color: #1e293b;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.fct-details-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .fct-details-pagination {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .fct-details-pagination-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
 .truck-loading-wrap {
   display: flex;
   flex-direction: column;

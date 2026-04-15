@@ -223,7 +223,7 @@
   background: transparent;
   border-radius: 8px;
   min-width: 400px;
-  font-size: 0.92rem;
+  font-size: 11px; /* UnregisterSourceDestination specific font size */
   table-layout: auto;
 }
 
@@ -235,7 +235,7 @@
   white-space: normal;
   overflow-wrap: break-word;
   word-break: break-word;
-  font-size: 0.92rem;
+  font-size: 11px; /* UnregisterSourceDestination specific font size */
 }
 
 .usd-table td:hover {
@@ -246,22 +246,22 @@
 @media (max-width: 900px) {
   .usd-table {
     min-width: 400px;
-    font-size: 0.95rem;
+    font-size: 11px;
   }
   .usd-table th, .usd-table td {
     max-width: 180px;
-    font-size: 0.95rem;
+    font-size: 11px;
   }
 }
 
 @media (max-width: 600px) {
   .usd-table {
     min-width: 320px;
-    font-size: 0.9rem;
+    font-size: 11px;
   }
   .usd-table th, .usd-table td {
     max-width: 120px;
-    font-size: 0.9rem;
+    font-size: 11px;
     padding: 8px 6px;
   }
 }
@@ -337,6 +337,18 @@
   border-bottom-right-radius: 12px;
   box-shadow: 0 -2px 8px 0 rgba(30,64,175,0.03);
   z-index: 3;
+}
+
+.unregister-pagination-count {
+  color: #1e293b;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.unregister-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .usd-pagination-btn {
@@ -425,6 +437,10 @@
     right: 0;
     bottom: 0;
     padding: 8px 8px 8px 8px;
+  }
+  .unregister-pagination-controls {
+    width: 100%;
+    justify-content: space-between;
   }
   .usd-search-bar {
     margin: 0 0 12px 6px;

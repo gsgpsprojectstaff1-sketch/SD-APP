@@ -22,8 +22,12 @@ export interface Source_Desti_Matrix {
   STDriverRate?: number;
   STHelperRate?: number;
   TripCount?: number;
+  TripNeedsReview?: string;
+  FCTNeedsReview?: string;
   ModifiedTime?: string;
   ModifiedBy?: string;
+  FCTApprovedBy?: string;
+  FCTApprovedTimeStamp?: string;
   CreatedTimeStamp?: string;
   CreatedBy?: string;
   ID?: number;

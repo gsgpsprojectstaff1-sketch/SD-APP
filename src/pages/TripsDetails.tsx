@@ -8,10 +8,19 @@ import "./TripsDetails.css";
 import Sidebar from "../components/Sidebar";
 import DashboardHeader from "../components/DashboardHeader";
 import { useCurrentUser } from "../lib/utils";
-import { ensureRowReviewBaseline, isRowReviewOutdated, markRowReviewed } from "../lib/reviewState";
 
 import { Source_Desti_MatrixService } from "../generated/services/Source_Desti_MatrixService";
 import type { Source_Desti_Matrix } from "../generated/models/Source_Desti_MatrixModel";
+
+const isReviewFlagOn = (value: unknown) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "y";
+  }
+  return false;
+};
 
 const isTripRowIncomplete = (row: Source_Desti_Matrix) => (
   row.TripIndex == null ||
@@ -19,6 +28,8 @@ const isTripRowIncomplete = (row: Source_Desti_Matrix) => (
   row.DriverRate == null ||
   row.HelperRate == null
 );
+
+const isTripRowForReview = (row: Source_Desti_Matrix) => isReviewFlagOn(row.TripNeedsReview);
 
 const getUpdatedTripFields = (previousRow: Source_Desti_Matrix, nextRow: Partial<Source_Desti_Matrix>) => {
   const fields: string[] = [];
@@ -290,7 +301,6 @@ const TripsDetails: React.FC<{ unregisterCount: number, tripCount: number, fctCo
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<Source_Desti_Matrix|null>(null);
-  const [staleRowIds, setStaleRowIds] = useState<Set<number>>(new Set());
   // Pagination state
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -303,29 +313,23 @@ const TripsDetails: React.FC<{ unregisterCount: number, tripCount: number, fctCo
   const { refreshCounts } = useBadgeCounts();
   // Fetch data
   const { refreshFlag, triggerRefresh, lastRefreshEvent } = useRefresh();
+  // Capture the timestamp of any event already in context at mount time so we don't re-fire stale toasts on remount
+  const mountedRefreshTimestamp = useRef<number>(lastRefreshEvent?.timestamp ?? Date.now());
+
   useEffect(() => {
     setLoading(true);
     Source_Desti_MatrixService.getAll().then(res => {
       const data = res.data || [];
-      const nextRows = data as Source_Desti_Matrix[];
-      const nextStaleRowIds = new Set<number>();
-
-      nextRows.forEach((row) => {
-        if (!isTripRowIncomplete(row)) {
-          ensureRowReviewBaseline("trip", row);
-          if (typeof row.ID === "number" && isRowReviewOutdated("trip", row)) {
-            nextStaleRowIds.add(row.ID);
-          }
-        }
-      });
-
-      setStaleRowIds(nextStaleRowIds);
-      setRows(nextRows.filter((row) => isTripRowIncomplete(row) || (typeof row.ID === "number" && nextStaleRowIds.has(row.ID))));
+      setRows((data as Source_Desti_Matrix[]).filter((row) => isTripRowIncomplete(row) || isTripRowForReview(row)));
     }).finally(()=>setLoading(false));
   }, [refreshFlag]);
 
   useEffect(() => {
     if (!lastRefreshEvent || lastRefreshEvent.source === "trips-details") {
+      return;
+    }
+    // Skip events that were already in context when this component mounted
+    if (lastRefreshEvent.timestamp <= mountedRefreshTimestamp.current) {
       return;
     }
 
@@ -445,6 +449,7 @@ const TripsDetails: React.FC<{ unregisterCount: number, tripCount: number, fctCo
       TonnerHelperRate: toNumberOrUndefined(form.TonnerHelperRate),
       STDriverRate: toNumberOrUndefined(form.STDriverRate),
       STHelperRate: toNumberOrUndefined(form.STHelperRate),
+      TripNeedsReview: "0",
     };
     const changedFieldNames = getUpdatedTripFields(selectedTrip, changedFields);
     await Source_Desti_MatrixService.update(String(selectedTrip.ID), changedFields);
@@ -453,23 +458,7 @@ const TripsDetails: React.FC<{ unregisterCount: number, tripCount: number, fctCo
     // Refresh data
     Source_Desti_MatrixService.getAll().then(res => {
       const data = res.data || [];
-      const nextRow = { ...selectedTrip, ...changedFields };
-      markRowReviewed("trip", nextRow);
-
-      const nextRows = data as Source_Desti_Matrix[];
-      const nextStaleRowIds = new Set<number>();
-
-      nextRows.forEach((row) => {
-        if (!isTripRowIncomplete(row)) {
-          ensureRowReviewBaseline("trip", row);
-          if (typeof row.ID === "number" && isRowReviewOutdated("trip", row)) {
-            nextStaleRowIds.add(row.ID);
-          }
-        }
-      });
-
-      setStaleRowIds(nextStaleRowIds);
-      setRows(nextRows.filter((row) => isTripRowIncomplete(row) || (typeof row.ID === "number" && nextStaleRowIds.has(row.ID))));
+      setRows((data as Source_Desti_Matrix[]).filter((row) => isTripRowIncomplete(row) || isTripRowForReview(row)));
       showToast("Trip entry committed successfully!");
       triggerRefresh({
         source: 'trips-details',
@@ -563,7 +552,7 @@ const TripsDetails: React.FC<{ unregisterCount: number, tripCount: number, fctCo
           onSearchChange={handleSearchChange}
         />
         <main className="dashboard-content">
-          {staleRowIds.size > 0 && (
+          {rows.filter((row) => isTripRowForReview(row)).length > 0 && (
             <div style={{
               margin: '0 24px 16px 24px',
               padding: '12px 16px',
@@ -573,7 +562,7 @@ const TripsDetails: React.FC<{ unregisterCount: number, tripCount: number, fctCo
               color: '#9a3412',
               fontWeight: 500,
             }}>
-              {`${staleRowIds.size} completed trip row(s) need review again because a source record was modified.`}
+              {`${rows.filter((row) => isTripRowForReview(row)).length} trip row(s) need review again because SAP Trip Table changed.`}
             </div>
           )}
           {loading ? (
@@ -617,7 +606,7 @@ const TripsDetails: React.FC<{ unregisterCount: number, tripCount: number, fctCo
                   </thead>
                   <tbody>
                     {pagedData.map((row, idx) => (
-                      <tr key={row.ID || idx} style={typeof row.ID === 'number' && staleRowIds.has(row.ID) ? { background: '#fffaf0' } : undefined}>
+                      <tr key={row.ID || idx} style={isTripRowForReview(row) ? { background: '#fffaf0' } : undefined}>
                         <td>
                           <span style={{
                             display: 'inline-flex',
@@ -626,12 +615,12 @@ const TripsDetails: React.FC<{ unregisterCount: number, tripCount: number, fctCo
                             minWidth: 110,
                             padding: '4px 10px',
                             borderRadius: 999,
-                            background: typeof row.ID === 'number' && staleRowIds.has(row.ID) ? '#fed7aa' : '#dbeafe',
-                            color: typeof row.ID === 'number' && staleRowIds.has(row.ID) ? '#9a3412' : '#1d4ed8',
+                            background: isTripRowForReview(row) ? '#fed7aa' : '#dbeafe',
+                            color: isTripRowForReview(row) ? '#9a3412' : '#1d4ed8',
                             fontSize: 12,
                             fontWeight: 700,
                           }}>
-                            {typeof row.ID === 'number' && staleRowIds.has(row.ID) ? 'Needs review' : 'Incomplete'}
+                            {isTripRowForReview(row) ? 'Needs review' : 'Incomplete'}
                           </span>
                         </td>
                         <td title={row.SourceName}>{row.SourceName}</td>

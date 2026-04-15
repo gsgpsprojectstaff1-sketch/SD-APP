@@ -75,10 +75,12 @@ input[type=number] {
   width: max-content;
   min-width: max(100%, 2200px);
   table-layout: auto;
+  font-size: 11px; /* TripDetails specific font size */
 }
 
 .trip-details-table th,
 .trip-details-table td {
+  font-size: 11px; /* TripDetails specific font size */
   white-space: nowrap;
   word-break: normal;
   overflow-wrap: normal;

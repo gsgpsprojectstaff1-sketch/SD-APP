@@ -15,7 +15,6 @@ const fieldOrder: (keyof Entry)[] = [
   "index",
   "km",
   "hauling",
-  "dhset",
   "driver",
   "helper",
   "ltDriverRate",
@@ -27,6 +26,8 @@ const fieldOrder: (keyof Entry)[] = [
   "tripCount",
   "modifiedBy",
   "modifiedTime",
+  "fctApprovedBy",
+  "fctApprovedTimeStamp",
   "createdBy",
   "createdtimestamp",
 ];
@@ -43,7 +44,6 @@ const fieldLabels: Record<string, string> = {
   index: "Trip Index",
   km: "Trip KM",
   hauling: "Hauling Rate",
-  dhset: "D Set",
   driver: "Driver Rate",
   helper: "helper Rate",
   ltDriverRate: "LT Driver Rate",
@@ -55,6 +55,8 @@ const fieldLabels: Record<string, string> = {
   tripCount: "Trip Count",
   modifiedBy: "Modified By",
   modifiedTime: "Modified Time",
+  fctApprovedBy: "FCT Approved By",
+  fctApprovedTimeStamp: "FCT Approved Time",
   createdBy: "Created By",
 };
 
@@ -140,7 +142,10 @@ const TripTable = ({ entries, onUpdate, onDelete }: TripTableProps) => {
                 <tr key={i + (currentPage - 1) * perPage}>
                   {fieldOrder.map((field, columnIndex) => {
                     const value = entry[field];
-                    const isTimestampField = field === "createdtimestamp" || field === "modifiedTime";
+                    const isTimestampField =
+                      field === "createdtimestamp" ||
+                      field === "modifiedTime" ||
+                      field === "fctApprovedTimeStamp";
 
                     return (
                       <td key={field} className={columnIndex <= 2 ? `sticky-col sticky-col-${columnIndex + 1}` : undefined}>

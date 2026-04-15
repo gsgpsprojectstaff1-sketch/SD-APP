@@ -9,7 +9,7 @@ import DashboardHeader from "../../src/components/DashboardHeader.tsx";
 import { type Entry } from "../../src/components/TripForm.tsx";
 import TripTable from "../../src/components/TripTable.tsx";
 import ConfirmDialog from "../../src/components/ConfirmDialog";
-import { Truck, MapPin, Route, TrendingUp } from "lucide-react";
+import { Truck, MapPin, Route} from "lucide-react";
 import { Source_Desti_MatrixService } from "../generated/services/Source_Desti_MatrixService";
 import { createManilaTimestampValue } from "../lib/utils";
 import "./Dashboard1.css";
@@ -139,6 +139,8 @@ const Dashboard1 = ({ unregisterCount, tripCount, fctCount }: { unregisterCount:
       HaulingRate: toNumberOrUndefined(editEntry.hauling),
       DriverRate: toNumberOrUndefined(editEntry.driver),
       HelperRate: toNumberOrUndefined(editEntry.helper),
+      TripNeedsReview: previousEntry && previousEntry.hauling !== editEntry.hauling ? "1" : undefined,
+      FCTNeedsReview: previousEntry && previousEntry.hauling !== editEntry.hauling ? "1" : undefined,
       ModifiedTime: createManilaTimestampValue(),
       ModifiedBy: username?.trim() || "Unknown User",
     };
@@ -248,10 +250,10 @@ const Dashboard1 = ({ unregisterCount, tripCount, fctCount }: { unregisterCount:
 
 
   const stats = [
-    { label: "Total Trips", value: entries.length, icon: Route },
-    { label: "Active Sources", value: new Set(entries.map((e) => e.source)).size, icon: MapPin },
+    { label: "Trips", value: entries.length, icon: Route },
+    { label: "Sources", value: new Set(entries.map((e) => e.source)).size, icon: MapPin },
     { label: "Destinations", value: new Set(entries.map((e) => e.destination)).size, icon: Truck },
-    { label: "Total KM", value: entries.reduce((sum, e) => sum + (parseFloat(e.km) || 0), 0).toFixed(0), icon: TrendingUp },
+    /*{ label: "Total KM", value: entries.reduce((sum, e) => sum + (parseFloat(e.km) || 0), 0).toFixed(0), icon: TrendingUp },*/
   ];
 
   const handleLogout = () => {
@@ -275,7 +277,6 @@ const Dashboard1 = ({ unregisterCount, tripCount, fctCount }: { unregisterCount:
         index: rec.TripIndex ? String(rec.TripIndex) : '',
         km: rec.TripKM ? String(rec.TripKM) : '',
         hauling: rec.HaulingRate ? String(rec.HaulingRate) : '',
-        dhset: rec.DHset || '',
         driver: rec.DriverRate ? String(rec.DriverRate) : '',
         helper: rec.HelperRate ? String(rec.HelperRate) : '',
         ltDriverRate: rec.LTDriverRate ? String(rec.LTDriverRate) : '',
@@ -287,6 +288,8 @@ const Dashboard1 = ({ unregisterCount, tripCount, fctCount }: { unregisterCount:
         tripCount: rec.TripCount ? String(rec.TripCount) : '',
         modifiedBy: rec.ModifiedBy || '',
         modifiedTime: rec.ModifiedTime ? String(rec.ModifiedTime) : '',
+        fctApprovedBy: rec.FCTApprovedBy || '',
+        fctApprovedTimeStamp: rec.FCTApprovedTimeStamp ? String(rec.FCTApprovedTimeStamp) : '',
         createdBy: rec.CreatedBy || '',
         orderEntry: '',
         createdtimestamp: rec.CreatedTimeStamp? String(rec.CreatedTimeStamp): '',
